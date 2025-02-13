@@ -87,3 +87,17 @@ def home():
 # ✅ Run Flask App
 if __name__ == '__main__':
     app.run(debug=True)
+
+
+# ✅ Load images from a folder
+def load_images():
+    images_folder = "static/images/"
+    return [f"/{images_folder}{img}" for img in os.listdir(images_folder) if img.endswith((".png", ".jpg", ".jpeg"))]
+
+# ✅ Modify home route to send images to index.html
+@app.route('/')
+def home():
+    articles = load_articles()
+    images = load_images()  # Get images from the static folder
+    return render_template("index.html", news_ar=articles["ar"], news_en=articles["en"], images=images)
+
