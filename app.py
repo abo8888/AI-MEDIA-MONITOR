@@ -1,63 +1,89 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 import pandas as pd
 import os
 
-# ✅ Initialize Flask App
+# ✅ إعداد Flask
 app = Flask(__name__)
 
-# ✅ Define Upload Paths for Arabic and English Articles
+# ✅ تحديد مسار الملفات المخزنة
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-CSV_FILE_AR = os.path.join(UPLOAD_FOLDER, "articles_ar.csv")
-CSV_FILE_EN = os.path.join(UPLOAD_FOLDER, "articles_en.csv")
+CSV_FILE = os.path.join(UPLOAD_FOLDER, "articles.csv")
 
-# ✅ API Endpoint to Receive Arabic & English Article Files
-@app.route('/api/upload_articles', methods=["POST"])
-def upload_articles():
-    """ API to Upload Arabic and English CSV Files """
-    
-    # ✅ Check if files are included in the request
-    if "file_ar" not in request.files or "file_en" not in request.files:
-        return jsonify({"error": "Both Arabic and English files are required!"}), 400
+# ✅ بيانات تسجيل الدخول للمشرف (يمكنك تخصيصها)
+ADMIN_USERNAME = "admin"
+ADMIN_PASSWORD = "password"  # ⚠️ قم بتغييرها إلى كلمة مرور قوية
 
-    file_ar = request.files["file_ar"]
-    file_en = request.files["file_en"]
-
-    # ✅ Save the Arabic CSV file
-    if file_ar.filename.endswith(".csv"):
-        file_ar.save(CSV_FILE_AR)
-    
-    # ✅ Save the English CSV file
-    if file_en.filename.endswith(".csv"):
-        file_en.save(CSV_FILE_EN)
-
-    return jsonify({"message": "Files uploaded successfully!"}), 201
-
-# ✅ Function to Load Arabic and English Articles
+# ✅ تحميل المقالات من CSV
 def load_articles():
-    """ Load Arabic and English articles separately """
-    articles = {"ar": [], "en": []}
+    """ تحميل المقالات من ملف CSV """
+    if not os.path.exists(CSV_FILE):
+        return []
     
-    if os.path.exists(CSV_FILE_AR):
-        df_ar = pd.read_csv(CSV_FILE_AR, encoding="utf-8-sig")
-        if {"title", "article", "image_url", "category"}.issubset(df_ar.columns):
-            df_ar = df_ar.rename(columns={"article": "content", "image_url": "image"})
-            articles["ar"] = df_ar.to_dict(orient="records")
+    df = pd.read_csv(CSV_FILE, encoding="utf-8-sig")
 
-    if os.path.exists(CSV_FILE_EN):
-        df_en = pd.read_csv(CSV_FILE_EN, encoding="utf-8-sig")
-        if {"title", "article", "image_url", "category"}.issubset(df_en.columns):
-            df_en = df_en.rename(columns={"article": "content", "image_url": "image"})
-            articles["en"] = df_en.to_dict(orient="records")
+    # ✅ التأكد من صحة الأعمدة
+    required_columns = {"title", "content", "image", "category"}
+    if not required_columns.issubset(df.columns):
+        print(f"🚨 الأعمدة المفقودة: {required_columns - set(df.columns)}")
+        return []
     
-    return articles
+    return df.to_dict(orient="records")
 
-# ✅ Home Route to Display Articles
-@app.route('/')
-def home():
+# ✅ صفحة تسجيل الدخول
+@app.route('/admin/login', methods=["GET", "POST"])
+def admin_login():
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+        
+        if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+            return redirect(url_for("admin_dashboard"))
+        else:
+            return "🚨 خطأ في تسجيل الدخول، تأكد من البيانات!", 403
+
+    return render_template("admin_login.html")
+
+# ✅ لوحة تحكم المشرف
+@app.route('/admin/dashboard')
+def admin_dashboard():
     articles = load_articles()
-    return render_template("index.html", news_ar=articles["ar"], news_en=articles["en"])
+    return render_template("admin_dashboard.html", articles=articles)
 
-# ✅ Run Flask App
+# ✅ إضافة مقال جديد عبر لوحة التحكم
+@app.route('/admin/add_article', methods=["POST"])
+def add_article():
+    """ إضافة مقال جديد إلى الموقع """
+    data = {
+        "title": request.form["title"],
+        "content": request.form["content"],
+        "image": request.form["image"],
+        "category": request.form["category"]
+    }
+
+    # ✅ تحميل المقالات القديمة
+    if os.path.exists(CSV_FILE):
+        df = pd.read_csv(CSV_FILE, encoding="utf-8-sig")
+    else:
+        df = pd.DataFrame(columns=["title", "content", "image", "category"])
+
+    # ✅ إضافة المقال الجديد
+    df = df.append(data, ignore_index=True)
+    df.to_csv(CSV_FILE, index=False, encoding="utf-8-sig")
+
+    return redirect(url_for("admin_dashboard"))
+
+# ✅ حذف مقال
+@app.route('/admin/delete_article/<int:article_id>')
+def delete_article(article_id):
+    """ حذف مقال من القائمة """
+    if os.path.exists(CSV_FILE):
+        df = pd.read_csv(CSV_FILE, encoding="utf-8-sig")
+        df = df.drop(article_id, axis=0).reset_index(drop=True)
+        df.to_csv(CSV_FILE, index=False, encoding="utf-8-sig")
+
+    return redirect(url_for("admin_dashboard"))
+
+# ✅ تشغيل التطبيق
 if __name__ == '__main__':
     app.run(debug=True)
