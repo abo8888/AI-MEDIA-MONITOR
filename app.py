@@ -1,19 +1,17 @@
 import os
 import pandas as pd
-from flask import Flask, render_template, request, redirect, url_for
-from werkzeug.utils import secure_filename
+from flask import Flask, render_template, request, jsonify
 from langdetect import detect
 
 # ✅ Initialize Flask App
 app = Flask(__name__)
 
-# ✅ Configure Upload Folder
+# ✅ Define Upload Path for Articles
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 CSV_FILE = os.path.join(UPLOAD_FOLDER, "articles.csv")
 
-# ✅ Function to Detect Language of a Given Text
+# ✅ Function to Detect Language
 def detect_language(text):
     try:
         lang = detect(text)
@@ -21,9 +19,9 @@ def detect_language(text):
     except:
         return "unknown"
 
-# ✅ Function to Load and Categorize Articles by Language
+# ✅ Function to Load Articles from CSV
 def load_articles():
-    """ Load articles from CSV and classify them into Arabic and English. """
+    """ Load articles and categorize them by language. """
     if not os.path.exists(CSV_FILE):
         return {"ar": [], "en": []}
     
@@ -37,58 +35,54 @@ def load_articles():
             return {"ar": [], "en": []}
 
         df = df.rename(columns={"article": "content", "image_url": "image"})
-        
+
         # ✅ Detect Language for Each Article
         df["language"] = df["content"].apply(detect_language)
-        
+
         # ✅ Separate Arabic and English Articles
         articles_ar = df[df["language"] == "ar"].to_dict(orient="records")
         articles_en = df[df["language"] == "en"].to_dict(orient="records")
-        
+
         return {"ar": articles_ar, "en": articles_en}
     
     except Exception as e:
         print(f"🚨 Error loading articles: {e}")
         return {"ar": [], "en": []}
 
-# ✅ Home Route - Display Articles by Language
+# ✅ API Endpoint to Receive Articles from Your Project
+@app.route('/api/add_article', methods=["POST"])
+def add_article():
+    """ API to Receive New Articles from Your Project """
+    data = request.json  # Get JSON Data
+    if not data:
+        return jsonify({"error": "Invalid request, no data received"}), 400
+    
+    required_fields = {"title", "content", "image", "category"}
+    if not required_fields.issubset(data.keys()):
+        return jsonify({"error": "Missing required fields"}), 400
+
+    # ✅ Load Existing Articles
+    if os.path.exists(CSV_FILE):
+        df = pd.read_csv(CSV_FILE, encoding="utf-8-sig")
+    else:
+        df = pd.DataFrame(columns=["title", "content", "image", "category", "language"])
+
+    # ✅ Detect Article Language
+    data["language"] = detect_language(data["content"])
+
+    # ✅ Append New Article
+    df = df.append(data, ignore_index=True)
+
+    # ✅ Save Updated Articles
+    df.to_csv(CSV_FILE, index=False, encoding="utf-8-sig")
+
+    return jsonify({"message": "Article added successfully"}), 201
+
+# ✅ Home Route - Display Articles
 @app.route('/')
 def home():
     articles = load_articles()
     return render_template("index.html", news_ar=articles["ar"], news_en=articles["en"])
-
-# ✅ Upload Route - Handle CSV File Upload
-@app.route('/upload', methods=["GET", "POST"])
-def upload_file():
-    if request.method == "POST":
-        if "file" not in request.files:
-            return "🚨 No file uploaded!", 400
-
-        file = request.files["file"]
-        if file.filename == "":
-            return "🚨 No file selected!", 400
-
-        if file and file.filename.endswith(".csv"):
-            filename = secure_filename("articles.csv")  # Save the file with a fixed name
-            file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
-            return redirect(url_for("home"))
-
-    return '''
-    <!doctype html>
-    <html lang="ar">
-    <head>
-        <meta charset="UTF-8">
-        <title>Upload CSV File</title>
-    </head>
-    <body>
-        <h1>📤 Upload New CSV File</h1>
-        <form action="" method="post" enctype="multipart/form-data">
-            <input type="file" name="file">
-            <input type="submit" value="Upload File">
-        </form>
-    </body>
-    </html>
-    '''
 
 # ✅ Run Flask App
 if __name__ == '__main__':
