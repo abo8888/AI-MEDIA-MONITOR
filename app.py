@@ -6,6 +6,7 @@ from langdetect import detect
 app = Flask(__name__)
 app.secret_key = "your_secret_key"
 
+
 # ✅ الحصول على عنوان قاعدة البيانات من المتغيرات البيئية
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
