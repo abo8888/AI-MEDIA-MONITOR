@@ -2,22 +2,26 @@ import os
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from langdetect import detect
-
-# ✅ Initialize Flask App
+# ✅ إعداد تطبيق Flask
 app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY", "your_secret_key")  # Use environment variable for security
+app.secret_key = "your_secret_key"
 
-# ✅ Retrieve DATABASE_URL from environment variables
-DATABASE_URL = os.getenv("DATABASE_URL")
+# ✅ الحصول على عنوان قاعدة البيانات من المتغيرات البيئية
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
 if not DATABASE_URL:
-    raise ValueError("🚨 DATABASE_URL is not set in environment variables!")
+    raise ValueError("DATABASE_URL is not set in environment variables!")
 
 app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-# ✅ Initialize Database
+# ✅ تهيئة قاعدة البيانات
 db = SQLAlchemy(app)
+
+# ✅ إنشاء الجداول عند بدء التشغيل
+with app.app_context():
+    db.create_all()
+
 
 # ✅ Define Article Model
 class Article(db.Model):
