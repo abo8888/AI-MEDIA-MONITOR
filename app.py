@@ -1,34 +1,34 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 import pandas as pd
 import os
-from langdetect import detect  # 🔍 مكتبة تحديد اللغة
+from langdetect import detect
 
-# ✅ إعداد Flask
+# ✅ Initialize Flask App
 app = Flask(__name__)
-app.secret_key = "your_secret_key"  # ⚠️ غيّر هذا المفتاح ليكون أكثر أمانًا
+app.secret_key = "your_secret_key"
 
-# ✅ تحديد مسار الملفات المخزنة
+# ✅ Define File Paths
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 CSV_FILE_AR = os.path.join(UPLOAD_FOLDER, "articles_ar.csv")
 CSV_FILE_EN = os.path.join(UPLOAD_FOLDER, "articles_en.csv")
 
-# ✅ بيانات تسجيل الدخول للمشرف
+# ✅ Admin Credentials
 ADMIN_USERNAME = "admin"
-ADMIN_PASSWORD = "securepassword"  # ⚠️ استخدم كلمة مرور قوية
+ADMIN_PASSWORD = "securepassword"
 
-# ✅ وظيفة التعرف على اللغة
+# ✅ Detect Language Function
 def detect_language(text):
-    """ تحديد لغة المقال تلقائيًا """
+    """Detect language of an article."""
     try:
         lang = detect(text)
         return "ar" if lang == "ar" else "en"
     except:
         return "unknown"
 
-# ✅ تحميل المقالات حسب اللغة
+# ✅ Load Articles by Language
 def load_articles():
-    """ تحميل المقالات وتقسيمها حسب اللغة """
+    """Load articles and classify them by language."""
     articles = {"ar": [], "en": []}
 
     if os.path.exists(CSV_FILE_AR):
@@ -43,21 +43,22 @@ def load_articles():
 
     return articles
 
-# ✅ الصفحة الرئيسية
+# ✅ Homepage with Language Toggle
 @app.route('/')
 def home():
+    lang = request.args.get('lang', 'en')  # Default language is English
     articles = load_articles()
-    return render_template("index.html", news_ar=articles["ar"], news_en=articles["en"])
+    return render_template("index.html", news_ar=articles["ar"], news_en=articles["en"], lang=lang)
 
-# ✅ رفع المقالات تلقائيًا وتحديد اللغة
+# ✅ Upload Articles Automatically with Language Detection
 @app.route('/admin/upload', methods=["POST"])
 def upload_articles():
-    """ تحميل ملف CSV وتحديد اللغة تلقائيًا """
+    """Upload CSV file and classify articles by language."""
     if not session.get("admin"):
         return redirect(url_for("admin_login"))
 
     if "file" not in request.files:
-        return "🚨 لم يتم رفع أي ملف!", 400
+        return "🚨 No file uploaded!", 400
 
     file = request.files["file"]
     if file.filename.endswith(".csv"):
@@ -74,16 +75,16 @@ def upload_articles():
 
     return redirect(url_for("admin_dashboard"))
 
-# ✅ لوحة التحكم
+# ✅ Admin Dashboard
 @app.route('/admin/dashboard')
 def admin_dashboard():
-    """ عرض لوحة التحكم للمشرف """
+    """Admin panel to manage articles."""
     if not session.get("admin"):
         return redirect(url_for("admin_login"))
 
     articles = load_articles()
     return render_template("admin_dashboard.html", news_ar=articles["ar"], news_en=articles["en"])
 
-# ✅ تشغيل التطبيق
+# ✅ Run Flask App
 if __name__ == '__main__':
     app.run(debug=True)
