@@ -1,22 +1,32 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
-import pandas as pd
+from flask_sqlalchemy import SQLAlchemy
 import os
 from langdetect import detect
-import json
 
 # ✅ Initialize Flask App
 app = Flask(__name__)
 app.secret_key = "your_secret_key"
 
-# ✅ Define File Paths
-UPLOAD_FOLDER = "uploads"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-CSV_FILE_AR = os.path.join(UPLOAD_FOLDER, "articles_ar.csv")
-CSV_FILE_EN = os.path.join(UPLOAD_FOLDER, "articles_en.csv")
+# ✅ Configure PostgreSQL Database (Use Render Database URL)
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@host:port/dbname")  
+app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-# ✅ Admin Credentials
-ADMIN_USERNAME = "admin"
-ADMIN_PASSWORD = "securepassword"
+# ✅ Initialize Database
+db = SQLAlchemy(app)
+
+# ✅ Define Article Model (For PostgreSQL)
+class Article(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(255), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    image = db.Column(db.String(255))
+    category = db.Column(db.String(100))
+    language = db.Column(db.String(10))
+
+# ✅ Create Database Tables
+with app.app_context():
+    db.create_all()
 
 # ✅ Detect Language Function
 def detect_language(text):
@@ -27,57 +37,59 @@ def detect_language(text):
     except:
         return "unknown"
 
-# ✅ Load Articles by Language
-def load_articles():
-    """Load articles and classify them by language."""
-    articles = {"ar": [], "en": []}
-
-    if os.path.exists(CSV_FILE_AR):
-        df_ar = pd.read_csv(CSV_FILE_AR, encoding="utf-8-sig")
-        if {"title", "content", "image", "category"}.issubset(df_ar.columns):
-            articles["ar"] = df_ar.to_dict(orient="records")
-
-    if os.path.exists(CSV_FILE_EN):
-        df_en = pd.read_csv(CSV_FILE_EN, encoding="utf-8-sig")
-        if {"title", "content", "image", "category"}.issubset(df_en.columns):
-            articles["en"] = df_en.to_dict(orient="records")
-
-    return articles
-
-# ✅ API Endpoint to Upload Articles
+# ✅ API to Upload Articles
 @app.route('/api/upload_articles', methods=["POST"])
 def upload_articles():
-    """API to receive and store articles."""
+    """Receive and store articles in PostgreSQL database."""
     data = request.get_json()
-
     if not data or "articles" not in data:
         return jsonify({"error": "Invalid request, 'articles' key is missing"}), 400
 
-    # ✅ Save articles to JSON file
-    with open("uploaded_articles.json", "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
+    for article in data["articles"]:
+        new_article = Article(
+            title=article["title"],
+            content=article["content"],
+            image=article["image"],
+            category=article["category"],
+            language=detect_language(article["content"])
+        )
+        db.session.add(new_article)
 
-    return jsonify({"message": "Articles uploaded successfully!"}), 201
+    db.session.commit()
+    return jsonify({"message": "Articles saved to database!"}), 201
+
+# ✅ API to Retrieve Articles
+@app.route('/api/get_articles', methods=["GET"])
+def get_articles():
+    """Fetch articles from PostgreSQL database."""
+    articles = Article.query.all()
+    articles_list = [
+        {"title": a.title, "content": a.content, "image": a.image, "category": a.category, "language": a.language}
+        for a in articles
+    ]
+    return jsonify({"articles": articles_list})
 
 # ✅ Homepage with Language Toggle
 @app.route('/')
 def home():
-    """Render homepage with articles in English and Arabic."""
     lang = request.args.get('lang', 'en')  # Default language is English
-    articles = load_articles()
-    return render_template("index.html", news_ar=articles["ar"], news_en=articles["en"], lang=lang)
+    articles_ar = Article.query.filter_by(language="ar").all()
+    articles_en = Article.query.filter_by(language="en").all()
 
+    return render_template("index.html", news_ar=articles_ar, news_en=articles_en, lang=lang)
+
+# ✅ Admin Dashboard
 @app.route('/admin/dashboard')
 def admin_dashboard():
     """Admin panel to manage articles."""
     if not session.get("admin"):
-        return redirect(url_for("admin_login"))  # ✅ تأكد من أن هذا يعمل
+        return redirect(url_for("admin_login"))
 
-    articles = load_articles()
-    return render_template("admin_dashboard.html", news_ar=articles["ar"], news_en=articles["en"])
+    articles_ar = Article.query.filter_by(language="ar").all()
+    articles_en = Article.query.filter_by(language="en").all()
 
+    return render_template("admin_dashboard.html", news_ar=articles_ar, news_en=articles_en)
 
-# ✅ Run Flask App
 if __name__ == '__main__':
     app.run(debug=True)
 
