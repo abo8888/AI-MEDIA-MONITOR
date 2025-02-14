@@ -67,16 +67,31 @@ def home():
     articles = load_articles()
     return render_template("index.html", news_ar=articles["ar"], news_en=articles["en"], lang=lang)
 
-# ✅ Admin Dashboard
 @app.route('/admin/dashboard')
 def admin_dashboard():
     """Admin panel to manage articles."""
     if not session.get("admin"):
-        return redirect(url_for("admin_login"))
+        return redirect(url_for("admin_login"))  # ✅ تأكد من أن هذا يعمل
 
     articles = load_articles()
     return render_template("admin_dashboard.html", news_ar=articles["ar"], news_en=articles["en"])
 
+
 # ✅ Run Flask App
 if __name__ == '__main__':
     app.run(debug=True)
+
+@app.route('/admin/login', methods=["GET", "POST"])
+def admin_login():
+    """Admin login page"""
+    if request.method == "POST":
+        username = request.form["abo"]
+        password = request.form["admin"]
+        
+        if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+            session["admin"] = True
+            return redirect(url_for("admin_dashboard"))
+        else:
+            return "🚨 Login failed, please check your credentials!", 403
+
+    return render_template("admin_login.html")
