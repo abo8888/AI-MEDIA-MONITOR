@@ -1,6 +1,6 @@
 flask
 flask-babel
 flask-sqlalchemy
-gunicorn
-pandas
+flask-migrate
+psycopg2
 langdetect
