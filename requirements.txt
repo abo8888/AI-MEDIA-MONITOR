@@ -3,4 +3,5 @@ flask-babel
 flask-sqlalchemy
 flask-migrate
 psycopg2
+gunicorn
 langdetect
