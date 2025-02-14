@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="{{ lang }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,55 +8,65 @@
     <style>
         body { background-color: #1a1a1a; color: #fff; }
         .card { background-color: #333; color: white; }
+        .toggle-btn { position: absolute; top: 10px; right: 20px; }
         .section-header { border-bottom: 2px solid #ffc107; padding-bottom: 10px; }
     </style>
 </head>
 <body>
 
+<!-- 🔀 Language Toggle -->
+<div class="toggle-btn">
+    <a href="/?lang=en" class="btn btn-primary {% if lang == 'en' %}disabled{% endif %}">🌍 English</a>
+    <a href="/?lang=ar" class="btn btn-warning {% if lang == 'ar' %}disabled{% endif %}">📌 العربية</a>
+</div>
+
 <div class="container mt-4">
     <h1 class="text-center text-warning">📰 AI NEWS</h1>
 
-    <!-- 📰 الأخبار العربية -->
-    <h2 class="text-primary section-header">📌 الأخبار العربية</h2>
-    <div class="row">
-        {% if news_ar %}
-            {% for article in news_ar %}
-            <div class="col-md-6 mb-4">
-                <div class="card">
-                    <img src="{{ article.image }}" class="card-img-top" alt="صورة المقال">
-                    <div class="card-body">
-                        <h5 class="card-title">{{ article.title }}</h5>
-                        <p class="card-text">{{ article.content[:150] }}...</p>
-                        <span class="badge bg-info">{{ article.category }}</span>
+    <!-- 📰 English News (Default) -->
+    {% if lang == 'en' %}
+        <h2 class="text-success section-header">🌍 English News</h2>
+        <div class="row">
+            {% if news_en %}
+                {% for article in news_en %}
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <img src="{{ article.image }}" class="card-img-top" alt="Article Image">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ article.title }}</h5>
+                            <p class="card-text">{{ article.content[:150] }}...</p>
+                            <span class="badge bg-info">{{ article.category }}</span>
+                        </div>
                     </div>
                 </div>
-            </div>
-            {% endfor %}
-        {% else %}
-            <p class="text-center text-danger">🚨 لا توجد مقالات عربية!</p>
-        {% endif %}
-    </div>
-
-    <!-- 📰 الأخبار الإنجليزية -->
-    <h2 class="text-success section-header">🌍 English News</h2>
-    <div class="row">
-        {% if news_en %}
-            {% for article in news_en %}
-            <div class="col-md-6 mb-4">
-                <div class="card">
-                    <img src="{{ article.image }}" class="card-img-top" alt="Article Image">
-                    <div class="card-body">
-                        <h5 class="card-title">{{ article.title }}</h5>
-                        <p class="card-text">{{ article.content[:150] }}...</p>
-                        <span class="badge bg-info">{{ article.category }}</span>
+                {% endfor %}
+            {% else %}
+                <p class="text-center text-danger">🚨 No English articles available!</p>
+            {% endif %}
+        </div>
+    
+    <!-- 📰 Arabic News -->
+    {% else %}
+        <h2 class="text-primary section-header">📌 الأخبار العربية</h2>
+        <div class="row">
+            {% if news_ar %}
+                {% for article in news_ar %}
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <img src="{{ article.image }}" class="card-img-top" alt="صورة المقال">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ article.title }}</h5>
+                            <p class="card-text">{{ article.content[:150] }}...</p>
+                            <span class="badge bg-info">{{ article.category }}</span>
+                        </div>
                     </div>
                 </div>
-            </div>
-            {% endfor %}
-        {% else %}
-            <p class="text-center text-danger">🚨 No English articles available!</p>
-        {% endif %}
-    </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-center text-danger">🚨 لا توجد مقالات عربية!</p>
+            {% endif %}
+        </div>
+    {% endif %}
 </div>
 
 </body>
