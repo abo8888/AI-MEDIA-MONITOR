@@ -3,174 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📰 AI News</title>
+    <title>📰 AI NEWS</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        /* 🌙 Dark Mode Styling */
-        body {
-            background-color: #121212;
-            color: #f8f9fa;
-            font-family: 'Arial', sans-serif;
-        }
-
-        /* 🎨 Navbar Styling */
-        .navbar {
-            background: linear-gradient(to right, #000428, #004e92);
-            padding: 15px;
-        }
-        .navbar-brand {
-            font-size: 1.5rem;
-            font-weight: bold;
-        }
-
-        /* 🖼️ Hero Section */
-        .hero {
-            background: url('/static/images/banner.jpg') no-repeat center center;
-            background-size: cover;
-            height: 300px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            color: white;
-            font-size: 2rem;
-            font-weight: bold;
-            text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.7);
-        }
-
-        /* 🖼️ Featured Images Section */
-        .gallery img {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-            border-radius: 10px;
-            transition: 0.3s;
-        }
-        .gallery img:hover {
-            transform: scale(1.05);
-            box-shadow: 0 6px 15px rgba(255, 255, 255, 0.2);
-        }
-
-        /* 📌 News Cards */
-        .card {
-            transition: 0.3s;
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 4px 10px rgba(255, 255, 255, 0.1);
-            background-color: #1e1e1e;
-            color: white;
-        }
-        .card:hover {
-            transform: scale(1.05);
-            box-shadow: 0 6px 15px rgba(255, 255, 255, 0.2);
-        }
-        .card img {
-            height: 200px;
-            object-fit: cover;
-        }
-
-        /* 🔗 Read More Button */
-        .btn-read-more {
-            background: linear-gradient(to right, #007bff, #6610f2);
-            color: white;
-            border: none;
-            transition: 0.3s;
-        }
-        .btn-read-more:hover {
-            background: linear-gradient(to right, #6610f2, #007bff);
-        }
-
-        /* 📌 Footer */
-        .footer {
-            background-color: #000428;
-            color: white;
-            text-align: center;
-            padding: 15px;
-            margin-top: 40px;
-            border-radius: 20px 20px 0 0;
-        }
+        body { background-color: #1a1a1a; color: #fff; }
+        .card { background-color: #333; color: white; }
+        .section-header { border-bottom: 2px solid #ffc107; padding-bottom: 10px; }
     </style>
 </head>
 <body>
 
-    <!-- 🏆 Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark">
-        <div class="container">
-            <a class="navbar-brand" href="#">📰 AI News</a>
-        
-        </div>
-    </nav>
+<div class="container mt-4">
+    <h1 class="text-center text-warning">📰 AI NEWS</h1>
 
-    <!-- 🖼️ Hero Section -->
-    <div class="hero">
-        أهلاً بك في موقع الأخبار الذكي 🌍
-    </div>
-
-    <div class="container mt-4">
-        <!-- 🖼️ Featured Images Section -->
-        <h2 class="text-center text-warning">📷 الصور المميزة</h2>
-        <div class="row gallery">
-            {% for image in images %}
-            <div class="col-md-4 mb-3">
-                <img src="{{ image }}" alt="Featured Image">
+    <!-- 📰 الأخبار العربية -->
+    <h2 class="text-primary section-header">📌 الأخبار العربية</h2>
+    <div class="row">
+        {% if news_ar %}
+            {% for article in news_ar %}
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <img src="{{ article.image }}" class="card-img-top" alt="صورة المقال">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ article.title }}</h5>
+                        <p class="card-text">{{ article.content[:150] }}...</p>
+                        <span class="badge bg-info">{{ article.category }}</span>
+                    </div>
+                </div>
             </div>
             {% endfor %}
-        </div>
-
-        <!-- 📰 Arabic News Section -->
-        <h2 class="text-primary text-center">📰 الأخبار العربية</h2>
-        <div class="row">
-            {% if news_ar %}
-                {% for article in news_ar %}
-                <div class="col-md-6 mb-4">
-                    <div class="card">
-                        <img src="{{ article.image }}" class="card-img-top" alt="صورة المقال">
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                <a href="/news/{{ loop.index0 }}" class="text-decoration-none text-light">{{ article.title }}</a>
-                            </h5>
-                            <p class="card-text">{{ article.content[:150] }}...</p>
-                            <span class="badge bg-info">{{ article.category }}</span>
-                            <a href="/news/{{ loop.index0 }}" class="btn btn-read-more">اقرأ المزيد</a>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            {% else %}
-                <p class="text-center text-danger"> لا توجد مقالات عربية!</p>
-            {% endif %}
-        </div>
-
-        <!-- 📰 English News Section -->
-        <h2 class="text-success text-center">📰 English News</h2>
-        <div class="row">
-            {% if news_en %}
-                {% for article in news_en %}
-                <div class="col-md-6 mb-4">
-                    <div class="card">
-                        <img src="{{ article.image }}" class="card-img-top" alt="Article Image">
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                <a href="/news/{{ loop.index0 }}" class="text-decoration-none text-light">{{ article.title }}</a>
-                            </h5>
-                            <p class="card-text">{{ article.content[:150] }}...</p>
-                            <span class="badge bg-info">{{ article.category }}</span>
-                            <a href="/news/{{ loop.index0 }}" class="btn btn-read-more">Read More</a>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            {% else %}
-                <p class="text-center text-danger">🚨 No English articles available!</p>
-            {% endif %}
-        </div>
+        {% else %}
+            <p class="text-center text-danger">🚨 لا توجد مقالات عربية!</p>
+        {% endif %}
     </div>
 
-    <!-- 📌 Footer -->
-    <div class="footer">
-        <p>&copy; 2025 AI News | جميع الحقوق محفوظة</p>
+    <!-- 📰 الأخبار الإنجليزية -->
+    <h2 class="text-success section-header">🌍 English News</h2>
+    <div class="row">
+        {% if news_en %}
+            {% for article in news_en %}
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <img src="{{ article.image }}" class="card-img-top" alt="Article Image">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ article.title }}</h5>
+                        <p class="card-text">{{ article.content[:150] }}...</p>
+                        <span class="badge bg-info">{{ article.category }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p class="text-center text-danger">🚨 No English articles available!</p>
+        {% endif %}
     </div>
+</div>
 
 </body>
 </html>
-
