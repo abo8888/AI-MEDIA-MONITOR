@@ -1,21 +1,25 @@
+import os
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
-import os
 from langdetect import detect
 
-# ✅ إعداد تطبيق Flask
+# ✅ Initialize Flask App
 app = Flask(__name__)
-app.secret_key = "your_secret_key"
+app.secret_key = os.getenv("SECRET_KEY", "your_secret_key")  # Use environment variable for security
 
-# ✅ إعداد اتصال قاعدة البيانات باستخدام PostgreSQL من Render
-DATABASE_URL = "postgresql://ai_news_db_t2em_user:your_database_password@dpg-cumvu81u0jms73b97nc0-a.oregon-postgres.render.com:5432/ai_news_db_t2em"
+# ✅ Retrieve DATABASE_URL from environment variables
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if not DATABASE_URL:
+    raise ValueError("🚨 DATABASE_URL is not set in environment variables!")
+
 app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-# ✅ تهيئة قاعدة البيانات
+# ✅ Initialize Database
 db = SQLAlchemy(app)
 
-# ✅ إنشاء نموذج المقال في قاعدة البيانات
+# ✅ Define Article Model
 class Article(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(255), nullable=False)
@@ -24,23 +28,23 @@ class Article(db.Model):
     category = db.Column(db.String(100))
     language = db.Column(db.String(10))
 
-# ✅ إنشاء الجداول في قاعدة البيانات
+# ✅ Create Tables on Startup
 with app.app_context():
     db.create_all()
 
-# ✅ وظيفة كشف اللغة تلقائيًا
+# ✅ Function to Detect Language
 def detect_language(text):
-    """ تحديد لغة المقال تلقائيًا """
+    """Detect language of an article."""
     try:
         lang = detect(text)
         return "ar" if lang == "ar" else "en"
     except:
         return "unknown"
 
-# ✅ API لاستقبال المقالات وحفظها في قاعدة البيانات
+# ✅ API Endpoint to Upload Articles
 @app.route('/api/upload_articles', methods=["POST"])
 def upload_articles():
-    """ استقبال المقالات وتخزينها في قاعدة البيانات """
+    """Receive and store articles in the database."""
     data = request.get_json()
     if not data or "articles" not in data:
         return jsonify({"error": "Invalid request, 'articles' key is missing"}), 400
@@ -58,10 +62,10 @@ def upload_articles():
     db.session.commit()
     return jsonify({"message": "Articles saved to database!"}), 201
 
-# ✅ API لاسترجاع المقالات
+# ✅ API Endpoint to Retrieve Articles
 @app.route('/api/get_articles', methods=["GET"])
 def get_articles():
-    """ استرجاع المقالات المخزنة في PostgreSQL """
+    """Retrieve stored articles from PostgreSQL."""
     articles = Article.query.all()
     articles_list = [
         {"title": a.title, "content": a.content, "image": a.image, "category": a.category, "language": a.language}
@@ -69,38 +73,25 @@ def get_articles():
     ]
     return jsonify({"articles": articles_list})
 
-# ✅ الصفحة الرئيسية لعرض المقالات حسب اللغة
+# ✅ Homepage with Language Toggle
 @app.route('/')
 def home():
-    lang = request.args.get('lang', 'en')  # اللغة الافتراضية هي الإنجليزية
+    lang = request.args.get('lang', 'en')  # Default language is English
     articles_ar = Article.query.filter_by(language="ar").all()
     articles_en = Article.query.filter_by(language="en").all()
 
     return render_template("index.html", news_ar=articles_ar, news_en=articles_en, lang=lang)
 
-# ✅ لوحة تحكم المشرف
-@app.route('/admin/dashboard')
-def admin_dashboard():
-    """ لوحة تحكم المشرف لإدارة المقالات """
-    if not session.get("admin"):
-        return redirect(url_for("admin_login"))
-
-    articles_ar = Article.query.filter_by(language="ar").all()
-    articles_en = Article.query.filter_by(language="en").all()
-
-    return render_template("admin_dashboard.html", news_ar=articles_ar, news_en=articles_en)
-
-if __name__ == '__main__':
-    app.run(debug=True)
-
-
+# ✅ Admin Login Page
+ADMIN_USERNAME = "admin"
+ADMIN_PASSWORD = "securepassword"
 
 @app.route('/admin/login', methods=["GET", "POST"])
 def admin_login():
     """Admin login page"""
     if request.method == "POST":
-        username = request.form["abo"]
-        password = request.form["admin"]
+        username = request.form["username"]
+        password = request.form["password"]
         
         if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
             session["admin"] = True
@@ -109,3 +100,26 @@ def admin_login():
             return "🚨 Login failed, please check your credentials!", 403
 
     return render_template("admin_login.html")
+
+# ✅ Admin Logout
+@app.route('/admin/logout')
+def admin_logout():
+    """Logout admin session"""
+    session.pop("admin", None)
+    return redirect(url_for("admin_login"))
+
+# ✅ Admin Dashboard
+@app.route('/admin/dashboard')
+def admin_dashboard():
+    """Admin panel to manage articles."""
+    if not session.get("admin"):
+        return redirect(url_for("admin_login"))
+
+    articles_ar = Article.query.filter_by(language="ar").all()
+    articles_en = Article.query.filter_by(language="en").all()
+
+    return render_template("admin_dashboard.html", news_ar=articles_ar, news_en=articles_en)
+
+# ✅ Run Flask App
+if __name__ == '__main__':
+    app.run(debug=True)
