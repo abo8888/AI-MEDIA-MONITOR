@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, j
 import pandas as pd
 import os
 from langdetect import detect
+import json
 
 # ✅ Initialize Flask App
 app = Flask(__name__)
@@ -43,31 +44,25 @@ def load_articles():
 
     return articles
 
-# ✅ API Route for Uploading Articles
+# ✅ API Endpoint to Upload Articles
 @app.route('/api/upload_articles', methods=["POST"])
 def upload_articles():
-    """Upload CSV file and classify articles by language."""
-    if not request.json or "articles" not in request.json:
-        return jsonify({"error": "Invalid data"}), 400
+    """API to receive and store articles."""
+    data = request.get_json()
 
-    articles = request.json["articles"]
+    if not data or "articles" not in data:
+        return jsonify({"error": "Invalid request, 'articles' key is missing"}), 400
 
-    df = pd.DataFrame(articles)
-
-    if {"title", "content", "image", "category"}.issubset(df.columns):
-        df["language"] = df["content"].apply(detect_language)
-
-        df_ar = df[df["language"] == "ar"].drop(columns=["language"])
-        df_en = df[df["language"] == "en"].drop(columns=["language"])
-
-        df_ar.to_csv(CSV_FILE_AR, index=False, encoding="utf-8-sig")
-        df_en.to_csv(CSV_FILE_EN, index=False, encoding="utf-8-sig")
+    # ✅ Save articles to JSON file
+    with open("uploaded_articles.json", "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
 
     return jsonify({"message": "Articles uploaded successfully!"}), 201
 
 # ✅ Homepage with Language Toggle
 @app.route('/')
 def home():
+    """Render homepage with articles in English and Arabic."""
     lang = request.args.get('lang', 'en')  # Default language is English
     articles = load_articles()
     return render_template("index.html", news_ar=articles["ar"], news_en=articles["en"], lang=lang)
@@ -85,4 +80,3 @@ def admin_dashboard():
 # ✅ Run Flask App
 if __name__ == '__main__':
     app.run(debug=True)
-
