@@ -1,30 +1,24 @@
 import os
+import pandas as pd
+import requests
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from langdetect import detect
+from sqlalchemy import create_engine
+
 # ✅ إعداد تطبيق Flask
 app = Flask(__name__)
-app.secret_key = "your_secret_key"
+app.secret_key = "12345"
 
+# ✅ الحصول على عنوان قاعدة البيانات من المتغيرات البيئية أو استخدام العنوان المباشر
+DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://ai_news_db_t2em_user:4dddE4EkwvJMycr2BVgAezLaOQVnxbKb@dpg-cumvu81u0jms73b97nc0-a.oregon-postgres.render.com:5432/ai_news_db_t2em")
 
-# ✅ الحصول على عنوان قاعدة البيانات من المتغيرات البيئية
-DATABASE_URL = os.environ.get("DATABASE_URL")
-
-if not DATABASE_URL:
-    raise ValueError("DATABASE_URL is not set in environment variables!")
-
+# ✅ تكوين قاعدة البيانات
 app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
-# ✅ تهيئة قاعدة البيانات
 db = SQLAlchemy(app)
 
-# ✅ إنشاء الجداول عند بدء التشغيل
-with app.app_context():
-    db.create_all()
-
-
-# ✅ Define Article Model
+# ✅ تعريف نموذج المقال
 class Article(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(255), nullable=False)
@@ -33,11 +27,11 @@ class Article(db.Model):
     category = db.Column(db.String(100))
     language = db.Column(db.String(10))
 
-# ✅ Create Tables on Startup
+# ✅ إنشاء الجداول عند بدء التشغيل
 with app.app_context():
     db.create_all()
 
-# ✅ Function to Detect Language
+# ✅ وظيفة لاكتشاف اللغة
 def detect_language(text):
     """Detect language of an article."""
     try:
@@ -46,13 +40,18 @@ def detect_language(text):
     except:
         return "unknown"
 
-# ✅ API Endpoint to Upload Articles
+# ✅ الصفحة الرئيسية
+@app.route("/")
+def home():
+    return "🎉 التطبيق يعمل بنجاح!"
+
+# ✅ API لإضافة المقالات إلى قاعدة البيانات
 @app.route('/api/upload_articles', methods=["POST"])
 def upload_articles():
-    """Receive and store articles in the database."""
+    """استقبال وتخزين المقالات في قاعدة البيانات."""
     data = request.get_json()
     if not data or "articles" not in data:
-        return jsonify({"error": "Invalid request, 'articles' key is missing"}), 400
+        return jsonify({"error": "❌ البيانات غير صحيحة!"}), 400
 
     for article in data["articles"]:
         new_article = Article(
@@ -65,12 +64,12 @@ def upload_articles():
         db.session.add(new_article)
 
     db.session.commit()
-    return jsonify({"message": "Articles saved to database!"}), 201
+    return jsonify({"message": "✅ تم حفظ المقالات بنجاح!"}), 201
 
-# ✅ API Endpoint to Retrieve Articles
+# ✅ API لاسترجاع المقالات من قاعدة البيانات
 @app.route('/api/get_articles', methods=["GET"])
 def get_articles():
-    """Retrieve stored articles from PostgreSQL."""
+    """جلب المقالات المخزنة في قاعدة البيانات."""
     articles = Article.query.all()
     articles_list = [
         {"title": a.title, "content": a.content, "image": a.image, "category": a.category, "language": a.language}
@@ -78,75 +77,24 @@ def get_articles():
     ]
     return jsonify({"articles": articles_list})
 
-# ✅ Homepage with Language Toggle
-@app.route('/')
-def home():
-    lang = request.args.get('lang', 'en')  # Default language is English
-    articles_ar = Article.query.filter_by(language="ar").all()
-    articles_en = Article.query.filter_by(language="en").all()
-
-    return render_template("index.html", news_ar=articles_ar, news_en=articles_en, lang=lang)
-
-# ✅ Admin Login Page
-ADMIN_USERNAME = "admin"
-ADMIN_PASSWORD = "securepassword"
-
-@app.route('/admin/login', methods=["GET", "POST"])
-def admin_login():
-    """Admin login page"""
-    if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
-        
-        if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
-            session["admin"] = True
-            return redirect(url_for("admin_dashboard"))
-        else:
-            return "🚨 Login failed, please check your credentials!", 403
-
-    return render_template("admin_login.html")
-
-# ✅ Admin Logout
-@app.route('/admin/logout')
-def admin_logout():
-    """Logout admin session"""
-    session.pop("admin", None)
-    return redirect(url_for("admin_login"))
-
-# ✅ Admin Dashboard
-@app.route('/admin/dashboard')
-def admin_dashboard():
-    """Admin panel to manage articles."""
-    if not session.get("admin"):
-        return redirect(url_for("admin_login"))
-
-    articles_ar = Article.query.filter_by(language="ar").all()
-    articles_en = Article.query.filter_by(language="en").all()
-
-    return render_template("admin_dashboard.html", news_ar=articles_ar, news_en=articles_en)
-
-# ✅ Run Flask App
-if __name__ == '__main__':
-    app.run(debug=True)
-from flask import Flask, request, jsonify
-from sqlalchemy import create_engine
-import pandas as pd
-
-app = Flask(__name__)
-
-# الاتصال بقاعدة البيانات
-DATABASE_URL = "postgresql://ai_news_db_t2em_user:4dddE4EkwvJMycr2BVgAezLaOQVnxbKb@dpg-cumvu81u0jms73b97nc0-a.oregon-postgres.render.com:5432/ai_news_db_t2em"
-engine = create_engine(DATABASE_URL)
-
+# ✅ API لنشر المقالات (إضافة مقالة جديدة)
 @app.route('/api/publish', methods=['POST'])
 def publish_article():
+    """نشر المقالات على الموقع وإضافتها إلى قاعدة البيانات."""
     data = request.json
     if "title" in data and "article" in data and "image_url" in data:
-        df = pd.DataFrame([data])
-        df.to_sql("articles", con=engine, if_exists="append", index=False)
+        new_article = Article(
+            title=data["title"],
+            content=data["article"],
+            image=data["image_url"],
+            language=detect_language(data["article"])
+        )
+        db.session.add(new_article)
+        db.session.commit()
         return jsonify({"message": "✅ تم نشر المقال بنجاح!"}), 200
     else:
         return jsonify({"error": "❌ البيانات غير مكتملة!"}), 400
 
+# ✅ تشغيل التطبيق
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0')
+    app.run(debug=True, host='0.0.0.0', port=10000)
