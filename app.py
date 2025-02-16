@@ -144,15 +144,25 @@ def admin_logout():
     return redirect(url_for("home"))
 @app.route('/api/publish', methods=['POST'])
 
+@app.route('/api/publish', methods=['POST'])
 def publish_article():
+    """نشر مقال جديد إلى قاعدة البيانات عبر API"""
     data = request.json
-    if "title" in data and "content" in data and "image" in data:
-        df = pd.DataFrame([data])
-        df.to_sql("articles", con=engine, if_exists="append", index=False)
-        return jsonify({"message": "✅ تم نشر المقال بنجاح!"}), 200
-    else:
+    if not data or "title" not in data or "content" not in data or "image" not in data:
         return jsonify({"error": "❌ البيانات غير مكتملة!"}), 400
 
+    new_article = Article(
+        title=data["title"],
+        content=data["content"],
+        image=data["image"],
+        category=data.get("category", "news"),  # افتراضي للأخبار
+        language=detect_language(data["content"])
+    )
+
+    db.session.add(new_article)
+    db.session.commit()
+
+    return jsonify({"message": f"✅ تم نشر المقال: {data['title']}"}), 201
 
 # ✅ تشغيل التطبيق
 if __name__ == "__main__":
