@@ -142,6 +142,17 @@ def delete_article(article_id):
 def admin_logout():
     session.pop("admin", None)
     return redirect(url_for("home"))
+@app.route('/api/publish', methods=['POST'])
+
+def publish_article():
+    data = request.json
+    if "title" in data and "content" in data and "image" in data:
+        df = pd.DataFrame([data])
+        df.to_sql("articles", con=engine, if_exists="append", index=False)
+        return jsonify({"message": "✅ تم نشر المقال بنجاح!"}), 200
+    else:
+        return jsonify({"error": "❌ البيانات غير مكتملة!"}), 400
+
 
 # ✅ تشغيل التطبيق
 if __name__ == "__main__":
