@@ -128,3 +128,25 @@ def admin_dashboard():
 # ✅ Run Flask App
 if __name__ == '__main__':
     app.run(debug=True)
+from flask import Flask, request, jsonify
+from sqlalchemy import create_engine
+import pandas as pd
+
+app = Flask(__name__)
+
+# الاتصال بقاعدة البيانات
+DATABASE_URL = "postgresql://ai_news_db_t2em_user:4dddE4EkwvJMycr2BVgAezLaOQVnxbKb@dpg-cumvu81u0jms73b97nc0-a.oregon-postgres.render.com:5432/ai_news_db_t2em"
+engine = create_engine(DATABASE_URL)
+
+@app.route('/api/publish', methods=['POST'])
+def publish_article():
+    data = request.json
+    if "title" in data and "article" in data and "image_url" in data:
+        df = pd.DataFrame([data])
+        df.to_sql("articles", con=engine, if_exists="append", index=False)
+        return jsonify({"message": "✅ تم نشر المقال بنجاح!"}), 200
+    else:
+        return jsonify({"error": "❌ البيانات غير مكتملة!"}), 400
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0')
