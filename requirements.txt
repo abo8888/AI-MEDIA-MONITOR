@@ -3,6 +3,7 @@ flask-babel
 flask-sqlalchemy
 flask-migrate
 psycopg2
+pandas
 requests
 gunicorn
 langdetect
