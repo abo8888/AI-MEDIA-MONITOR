@@ -94,6 +94,12 @@ def publish_article():
         return jsonify({"message": "✅ تم نشر المقال بنجاح!"}), 200
     else:
         return jsonify({"error": "❌ البيانات غير مكتملة!"}), 400
+@app.route('/api/get_articles_sql', methods=['GET'])
+def get_articles_sql():
+    query = "SELECT * FROM articles ORDER BY created_at DESC;"
+    result = engine.execute(query)
+    articles = [dict(row) for row in result]
+    return jsonify({"articles": articles})
 
 # ✅ تشغيل التطبيق
 if __name__ == '__main__':
