@@ -1,37 +1,46 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>لوحة التحكم - المشرف</title>
+    <title>Admin Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="bg-dark text-light">
     <div class="container mt-5">
-        <h2 class="text-center">⚙️ لوحة التحكم</h2>
+        <h2 class="text-center">⚙️ Admin Dashboard</h2>
         
-        <!-- 🔐 زر تسجيل الخروج -->
+        <!-- Language Selector -->
         <div class="text-end">
-            <a href="/admin/logout" class="btn btn-danger">🚪 تسجيل الخروج</a>
+            <select id="languageSwitcher" class="form-select w-auto d-inline-block">
+                <option value="en">English</option>
+                <option value="de">Deutsch</option>
+                <option value="ar">العربية</option>
+            </select>
+        </div>
+        
+        <!-- Logout Button -->
+        <div class="text-end mt-3">
+            <a href="/admin/logout" class="btn btn-danger">🚪 Logout</a>
         </div>
 
-        <!-- 📤 إضافة مقال جديد -->
-        <h4 class="mt-4">📑 إضافة مقال جديد</h4>
+        <!-- Add New Article -->
+        <h4 class="mt-4">📑 Add New Article</h4>
         <form action="/admin/add_article" method="post">
-            <input type="text" name="title" placeholder="عنوان المقال" class="form-control mb-3" required>
-            <textarea name="content" placeholder="محتوى المقال" class="form-control mb-3" required></textarea>
-            <input type="text" name="image" placeholder="رابط الصورة" class="form-control mb-3">
-            <input type="text" name="category" placeholder="التصنيف" class="form-control mb-3">
-            <button type="submit" class="btn btn-success">➕ إضافة المقال</button>
+            <input type="text" name="title" placeholder="Article Title" class="form-control mb-3" required>
+            <textarea name="content" placeholder="Article Content" class="form-control mb-3" required></textarea>
+            <input type="text" name="image" placeholder="Image URL" class="form-control mb-3">
+            <input type="text" name="category" placeholder="Category" class="form-control mb-3">
+            <button type="submit" class="btn btn-success">➕ Add Article</button>
         </form>
 
-        <!-- 📰 قائمة المقالات -->
-        <h4 class="mt-5">📰 المقالات الحالية</h4>
+        <!-- Article List -->
+        <h4 class="mt-5">📰 Current Articles</h4>
         <table class="table table-dark table-striped">
             <thead>
                 <tr>
-                    <th>العنوان</th>
-                    <th>التصنيف</th>
-                    <th>الإجراء</th>
+                    <th>Title</th>
+                    <th>Category</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -40,12 +49,20 @@
                     <td>{{ article.title }}</td>
                     <td>{{ article.category }}</td>
                     <td>
-                        <a href="/admin/delete_article/{{ loop.index0 }}" class="btn btn-danger btn-sm">🗑️ حذف</a>
+                        <a href="/admin/edit_article/{{ loop.index0 }}" class="btn btn-primary btn-sm">✏️ Edit</a>
+                        <a href="/admin/delete_article/{{ loop.index0 }}" class="btn btn-danger btn-sm">🗑️ Delete</a>
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
+
+    <script>
+        document.getElementById('languageSwitcher').addEventListener('change', function() {
+            const lang = this.value;
+            window.location.href = `?lang=${lang}`;
+        });
+    </script>
 </body>
 </html>
