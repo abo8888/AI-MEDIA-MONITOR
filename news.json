@@ -1,34 +1,26 @@
-{
-   "articles": [
-      {
-         "title": "اختبار أول خبر",
-         "content": "هذا هو نص الخبر الأول.",
-         "image": "https://via.placeholder.com/150",
-         "category": "سياسة"
-      },
-      {
-         "title": "الذكاء الصناعي في الأخبار",
-         "content": "يستخدم الذكاء الصناعي في تحليل الأخبار وتوليد المحتوى تلقائيًا.",
-         "image": "https://via.placeholder.com/150",
-         "category": "تكنولوجيا"
-      },
-      {
-         "title": "ارتفاع أسعار النفط عالميًا",
-         "content": "شهدت أسعار النفط ارتفاعًا ملحوظًا بسبب التوترات الاقتصادية.",
-         "image": "https://via.placeholder.com/150",
-         "category": "اقتصاد"
-      },
-      {
-         "title": "نادي برشلونة يحقق فوزًا كبيرًا",
-         "content": "حقق نادي برشلونة فوزًا ساحقًا على خصمه في دوري الأبطال.",
-         "image": "https://via.placeholder.com/150",
-         "category": "رياضة"
-      },
-      {
-         "title": "مقال تجريبي",
-         "content": "هذا مقال تجريبي.",
-         "image": "https://via.placeholder.com/300",
-         "category": "تكنولوجيا"
-      }
-   ]
-}
+[
+    {
+        "title": "اختبار أول خبر",
+        "content": "هذا هو نص الخبر الأول.",
+        "image": "https://via.placeholder.com/150",
+        "category": "سياسة"
+    },
+    {
+        "title": "الذكاء الصناعي في الأخبار",
+        "content": "يستخدم الذكاء الصناعي في تحليل الأخبار وتوليد المحتوى تلقائيًا.",
+        "image": "https://via.placeholder.com/150",
+        "category": "تكنولوجيا"
+    },
+    {
+        "title": "ارتفاع أسعار النفط عالميًا",
+        "content": "شهدت أسعار النفط ارتفاعًا ملحوظًا بسبب التوترات الاقتصادية.",
+        "image": "https://via.placeholder.com/150",
+        "category": "اقتصاد"
+    },
+    {
+        "title": "نادي برشلونة يحقق فوزًا كبيرًا",
+        "content": "حقق نادي برشلونة فوزًا ساحقًا على خصمه في دوري الأبطال.",
+        "image": "https://via.placeholder.com/150",
+        "category": "رياضة"
+    }
+]
