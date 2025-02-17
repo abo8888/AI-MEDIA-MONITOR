@@ -1,10 +1,9 @@
 from flask import Flask, render_template, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_babel import Babel
-from langdetect import detect
 import os
 
-# ✅ إعداد تطبيق Flask
+# ✅ إنشاء تطبيق Flask
 app = Flask(__name__)
 babel = Babel(app)
 
@@ -35,11 +34,21 @@ babel.init_app(app, locale_selector=get_locale)
 def inject_get_locale():
     return dict(get_locale=get_locale)
 
+# ✅ نموذج للمقالات
+class Article(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    image = db.Column(db.String(500), nullable=True)
+    category = db.Column(db.String(50), nullable=False)
+    language = db.Column(db.String(10), nullable=False)
+
 # ✅ الصفحة الرئيسية
 @app.route("/")
 def home():
-    news = db.session.query(Article).filter_by(category="news", language=get_locale()).order_by(Article.id.desc()).all()
-    return render_template("index.html", news=news)
+    lang = get_locale()
+    articles = Article.query.filter_by(language=lang).order_by(Article.id.desc()).all()
+    return render_template("index.html", articles=articles, lang=lang)
 
 # ✅ تشغيل التطبيق
 if __name__ == "__main__":
