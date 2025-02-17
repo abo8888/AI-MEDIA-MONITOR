@@ -3,16 +3,15 @@ from langdetect import detect
 
 db = SQLAlchemy()
 
-# ✅ نموذج المقال في قاعدة البيانات
 class Article(db.Model):
-    __tablename__ = "articles"
+    __tablename__ = 'articles'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100))
+    content = db.Column(db.Text)
+    image = db.Column(db.String(100))
+    category = db.Column(db.String(50))
+    language = db.Column(db.String(10))
 
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    title = db.Column(db.String(255), nullable=False)
-    content = db.Column(db.Text, nullable=False)
-    image = db.Column(db.String(255), nullable=True)
-    category = db.Column(db.String(100), nullable=False)
-    language = db.Column(db.String(10), nullable=False)
 
     def __init__(self, title, content, image=None, category="news"):
         self.title = title.strip()
