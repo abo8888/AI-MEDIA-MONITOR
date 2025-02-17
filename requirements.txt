@@ -2,8 +2,9 @@ flask
 flask-babel
 flask-sqlalchemy
 flask-migrate
-psycopg2
+psycopg2-binary
 pandas
 requests
 gunicorn
 langdetect
+flask-cors
