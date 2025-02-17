@@ -4,13 +4,11 @@ from langdetect import detect
 db = SQLAlchemy()
 
 class Article(db.Model):
-    __tablename__ = 'articles'
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(100))
-    content = db.Column(db.Text)
-    image = db.Column(db.String(100))
-    category = db.Column(db.String(50))
-    language = db.Column(db.String(10))
+    title = db.Column(db.String(255), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    # باقي الأعمدة ...
+
 
 
     def __init__(self, title, content, image=None, category="news"):
