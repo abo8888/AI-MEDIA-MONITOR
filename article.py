@@ -10,23 +10,25 @@ class Article(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(255), nullable=False)
     content = db.Column(db.Text, nullable=False)
-    image = db.Column(db.String(255))
+    image = db.Column(db.String(255), nullable=True)
     category = db.Column(db.String(100), nullable=False)
     language = db.Column(db.String(10), nullable=False)
 
-    def __init__(self, title, content, image, category):
-        self.title = title
-        self.content = content
-        self.image = image
-        self.category = category
+    def __init__(self, title, content, image=None, category="news"):
+        self.title = title.strip()
+        self.content = content.strip()
+        self.image = image.strip() if image else None
+        self.category = category.strip()
         self.language = self.detect_language(content)
 
-    def detect_language(self, text):
+    @staticmethod
+    def detect_language(text):
         """تحليل اللغة تلقائيًا عند إنشاء المقال"""
         try:
             lang = detect(text)
-            return "ar" if lang == "ar" else "en"
-        except:
+            return lang if lang in ["ar", "en", "de"] else "en"
+        except Exception as e:
+            print(f"⚠️ خطأ في كشف اللغة: {e}")
             return "unknown"
 
     def to_dict(self):
@@ -35,7 +37,7 @@ class Article(db.Model):
             "id": self.id,
             "title": self.title,
             "content": self.content,
-            "image": self.image,
-            "category": self.category,
+            "image": self.image if self.image else "https://via.placeholder.com/300",
+            "category": self.category.capitalize(),
             "language": self.language
         }
