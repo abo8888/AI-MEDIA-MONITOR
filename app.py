@@ -12,11 +12,10 @@ app = Flask(__name__)
 app.secret_key = "12345"
 
 # ✅ تكوين قاعدة البيانات (متوافق مع منصة Render)
-DATABASE_URL = os.environ.get(
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
     "DATABASE_URL",
     "postgresql://ai_news_db_t2em_user:4dddE4EkwvJMycr2BVgAezLaOQVnxbKb@dpg-cumvu81u0jms73b97nc0-a:5432/ai_news_db_t2em"
 )
-app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db.init_app(app)  # ✅ تهيئة قاعدة البيانات
@@ -39,11 +38,12 @@ babel.init_app(app, locale_selector=get_locale)
 
 # ✅ وظيفة لاكتشاف لغة المقال تلقائيًا
 def detect_language(text):
+    """تحليل اللغة تلقائيًا مع معالجة الأخطاء"""
     try:
-        lang = detect(text)
+        lang = detect(text) if text and len(text) > 10 else "unknown"
         return lang if lang in ["ar", "en", "de"] else "en"
     except Exception as e:
-        print(f"Error detecting language: {e}")
+        print(f"⚠️ خطأ في كشف اللغة: {e}")
         return "unknown"
 
 # ✅ الصفحة الرئيسية
@@ -57,14 +57,19 @@ def home():
 @app.route("/api/publish", methods=["POST"])
 def publish_article():
     data = request.json
-    if not data or "title" not in data or "content" not in data or "image" not in data:
+    if not data or "title" not in data or "content" not in data:
         return jsonify({"error": "❌ البيانات غير مكتملة!"}), 400
+
+    # ✅ التأكد من عدم تكرار المقال بنفس العنوان
+    existing_article = Article.query.filter_by(title=data["title"]).first()
+    if existing_article:
+        return jsonify({"error": "❌ المقال موجود بالفعل!"}), 409
 
     # ✅ إنشاء مقال جديد وإضافته إلى قاعدة البيانات
     new_article = Article(
         title=data["title"],
         content=data["content"],
-        image=data["image"],
+        image=data.get("image", "https://via.placeholder.com/300"),  # صورة افتراضية إذا لم تكن موجودة
         category=data.get("category", "news"),
         language=detect_language(data["content"])
     )
@@ -82,7 +87,14 @@ def publish_article():
 def get_articles(category, lang):
     articles = Article.query.filter_by(category=category, language=lang).order_by(Article.id.desc()).all()
     articles_list = [
-        {"title": a.title, "content": a.content, "image": a.image, "category": a.category, "language": a.language}
+        {
+            "id": a.id,
+            "title": a.title,
+            "content": a.content[:200] + "...",  # تقليل حجم المحتوى لواجهة API
+            "image": a.image if a.image else "https://via.placeholder.com/300",
+            "category": a.category,
+            "language": a.language
+        }
         for a in articles
     ]
     return jsonify({"articles": articles_list})
