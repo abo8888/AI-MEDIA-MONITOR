@@ -1,0 +1,5 @@
+msgid "Welcome to AI News Monitor"
+msgstr "مرحبًا بك في مرصد الأخبار بالذكاء الاصطناعي"
+
+msgid "Latest News"
+msgstr "أحدث الأخبار"
