@@ -1,14 +1,16 @@
 import os
+import json
 import pandas as pd
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from flask import Flask, render_template, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from flask_babel import Babel, _
 from langdetect import detect
 
 # ✅ إعداد تطبيق Flask
 app = Flask(__name__)
 app.secret_key = "12345"
 
-# ✅ تكوين قاعدة البيانات
+# ✅ تكوين قاعدة البيانات (متوافق مع منصة Render)
 DATABASE_URL = os.environ.get(
     "DATABASE_URL",
     "postgresql://ai_news_db_t2em_user:4dddE4EkwvJMycr2BVgAezLaOQVnxbKb@dpg-cumvu81u0jms73b97nc0-a:5432/ai_news_db_t2em"
@@ -17,7 +19,18 @@ app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
-# ✅ نموذج المقال
+# ✅ إعداد اللغات المدعومة
+app.config['BABEL_DEFAULT_LOCALE'] = 'en'  # اللغة الافتراضية
+app.config['BABEL_TRANSLATION_DIRECTORIES'] = 'translations'  # مكان حفظ الترجمات
+app.config['LANGUAGES'] = ['en', 'de', 'ar']  # اللغات المدعومة
+babel = Babel(app)
+
+# ✅ دالة اختيار اللغة
+def get_locale():
+    return request.args.get('lang') or request.accept_languages.best_match(app.config['LANGUAGES'])
+babel.init_app(app, locale_selector=get_locale)
+
+# ✅ نموذج المقال في قاعدة البيانات
 class Article(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(255), nullable=False)
@@ -26,11 +39,11 @@ class Article(db.Model):
     category = db.Column(db.String(100), nullable=False)
     language = db.Column(db.String(10), nullable=False)
 
-# ✅ إنشاء الجداول
+# ✅ إنشاء الجداول في قاعدة البيانات عند تشغيل التطبيق
 with app.app_context():
     db.create_all()
 
-# ✅ وظيفة لاكتشاف اللغة
+# ✅ وظيفة لاكتشاف لغة المقال تلقائيًا
 def detect_language(text):
     try:
         lang = detect(text)
@@ -41,17 +54,18 @@ def detect_language(text):
 # ✅ الصفحة الرئيسية
 @app.route("/")
 def home():
-    lang = request.args.get("lang", "en")
+    lang = get_locale()  # تحديد اللغة المختارة
     news = Article.query.filter_by(category="news", language=lang).all()
     return render_template("index.html", news=news, lang=lang)
 
-# ✅ API نشر المقالات
+# 🚀 **API لنشر المقالات في قاعدة البيانات**
 @app.route("/api/publish", methods=["POST"])
 def publish_article():
     data = request.json
     if not data or "title" not in data or "content" not in data or "image" not in data:
         return jsonify({"error": "❌ البيانات غير مكتملة!"}), 400
 
+    # ✅ إنشاء مقال جديد وإضافته إلى قاعدة البيانات
     new_article = Article(
         title=data["title"],
         content=data["content"],
@@ -65,7 +79,7 @@ def publish_article():
 
     return jsonify({"message": f"✅ تم نشر المقال: {data['title']}"}), 201
 
-# ✅ API لاسترجاع المقالات
+# ✅ API لاسترجاع المقالات حسب الفئة واللغة
 @app.route("/api/get_articles/<category>/<lang>", methods=["GET"])
 def get_articles(category, lang):
     articles = Article.query.filter_by(category=category, language=lang).all()
@@ -77,4 +91,4 @@ def get_articles(category, lang):
 
 # ✅ تشغيل التطبيق
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=10000)
+    app.run(debug=True)
