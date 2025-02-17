@@ -36,12 +36,13 @@ def get_locale():
 
 babel.init_app(app, locale_selector=get_locale)
 
-# ✅ وظيفة لاكتشاف لغة المقال تلقائيًا
 def detect_language(text):
     """تحليل اللغة تلقائيًا مع معالجة الأخطاء"""
     try:
-        lang = detect(text) if text and len(text) > 10 else "unknown"
-        return lang if lang in ["ar", "en", "de"] else "en"
+        if text and len(text) > 10:  # يجب أن يكون النص أطول من 10 أحرف
+            lang = detect(text)
+            return lang if lang in ["ar", "en", "de"] else "en"
+        return "unknown"
     except Exception as e:
         print(f"⚠️ خطأ في كشف اللغة: {e}")
         return "unknown"
