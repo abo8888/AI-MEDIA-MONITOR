@@ -1,0 +1,5 @@
+msgid "Welcome to AI News Monitor"
+msgstr "Welcome to AI News Monitor"
+
+msgid "Latest News"
+msgstr "Latest News"
