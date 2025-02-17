@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="{{ get_locale() }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Media Monitor</title>
+    <title>{{ gettext("AI News Monitor") }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
@@ -42,69 +42,85 @@
     </style>
 </head>
 <body>
-    <!-- 🟡 Navigation Bar -->
+    <!-- 🟡 شريط التنقل العلوي -->
     <nav class="navbar navbar-expand-lg">
         <div class="container">
-            <a class="navbar-brand" href="#">AI Media Monitor</a>
+            <a class="navbar-brand" href="#">{{ gettext("AI News Monitor") }}</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="#news">📰 أخبار</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#studies">📊 دراسات</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#media">🎥 ميديا</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#about">ℹ️ من نحن</a></li>
-                    <li class="nav-item"><a class="nav-link btn btn-warning text-dark" href="/admin">⚙️ لوحة التحكم</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#news">📰 {{ gettext("News") }}</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#studies">📊 {{ gettext("Studies") }}</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#media">🎥 {{ gettext("Media") }}</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#about">ℹ️ {{ gettext("About Us") }}</a></li>
+                    <li class="nav-item"><a class="nav-link btn btn-warning text-dark" href="/admin">⚙️ {{ gettext("Admin Panel") }}</a></li>
                 </ul>
             </div>
         </div>
     </nav>
 
-    <!-- 🔥 Hero Section -->
+    <!-- 🔥 القسم الرئيسي -->
     <div class="hero">
-        <h1>مرصد الإعلام بالذكاء الصناعي</h1>
-        <p>تحليلات عميقة للأخبار والميديا باستخدام الذكاء الاصطناعي</p>
+        <h1>{{ gettext("AI News Monitor") }}</h1>
+        <p>{{ gettext("Deep AI-driven news and media analysis") }}</p>
     </div>
 
-    <!-- 📰 News Section -->
+    <!-- 📰 قسم الأخبار -->
     <section id="news" class="container mt-5">
-        <h2 class="section-title">📰 أحدث الأخبار</h2>
+        <h2 class="section-title">📰 {{ gettext("Latest News") }}</h2>
         <div class="row">
             <div class="col-md-4">
                 <div class="card bg-dark text-white">
                     <img src="https://via.placeholder.com/300" class="card-img-top">
                     <div class="card-body">
-                        <h5 class="card-title">عنوان المقال</h5>
-                        <p class="card-text">محتوى مختصر للمقال...</p>
-                        <a href="#" class="btn btn-warning">اقرأ المزيد</a>
+                        <h5 class="card-title">{{ gettext("News Title") }}</h5>
+                        <p class="card-text">{{ gettext("Short description of the article...") }}</p>
+                        <a href="#" class="btn btn-warning">{{ gettext("Read More") }}</a>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- 📊 Studies Section -->
+    <!-- 📊 قسم الدراسات -->
     <section id="studies" class="container mt-5">
-        <h2 class="section-title">📊 دراسات</h2>
-        <p>تحليل عميق للأحداث باستخدام الذكاء الاصطناعي.</p>
+        <h2 class="section-title">📊 {{ gettext("Studies") }}</h2>
+        <p>{{ gettext("Deep analysis of global events using AI.") }}</p>
     </section>
 
-    <!-- 🎥 Media Section -->
+    <!-- 🎥 قسم الميديا -->
     <section id="media" class="container mt-5">
-        <h2 class="section-title">🎥 ميديا</h2>
-        <p>صور وفيديوهات تحليلية للأخبار العالمية.</p>
+        <h2 class="section-title">🎥 {{ gettext("Media") }}</h2>
+        <p>{{ gettext("Images and videos analyzing global news.") }}</p>
     </section>
 
-    <!-- ℹ️ About Section -->
+    <!-- ℹ️ قسم من نحن -->
     <section id="about" class="container mt-5">
-        <h2 class="section-title">ℹ️ من نحن</h2>
-        <p>مرصد إعلامي يستخدم الذكاء الاصطناعي لتحليل الأخبار بدقة.</p>
+        <h2 class="section-title">ℹ️ {{ gettext("About Us") }}</h2>
+        <p>{{ gettext("An AI-powered media monitoring platform for precise news analysis.") }}</p>
     </section>
 
-    <!-- ⚙️ Footer -->
+    <!-- 🌍 اختيار اللغة -->
+    <div class="container text-center mt-4">
+        <label for="languageSwitcher" class="form-label">{{ gettext("Select Language") }}</label>
+        <select id="languageSwitcher" class="form-select w-auto mx-auto">
+            <option value="en" {% if get_locale() == 'en' %}selected{% endif %}>English</option>
+            <option value="de" {% if get_locale() == 'de' %}selected{% endif %}>Deutsch</option>
+            <option value="ar" {% if get_locale() == 'ar' %}selected{% endif %}>العربية</option>
+        </select>
+    </div>
+
+    <script>
+        document.getElementById('languageSwitcher').addEventListener('change', function() {
+            window.location.href = `/?lang=${this.value}`;
+        });
+    </script>
+
+    <!-- ⚙️ الفوتر -->
     <footer class="footer">
-        <p>&copy; 2025 AI Media Monitor | جميع الحقوق محفوظة</p>
+        <p>&copy; 2025 {{ gettext("AI News Monitor | All Rights Reserved") }}</p>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
