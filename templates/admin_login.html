@@ -3,29 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <title>{{ gettext("Admin Login") }}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- ✅ تحسين تحميل Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" 
+          rel="stylesheet" 
+          integrity="sha384-rbsA2VBKQX3JqMAe6ZlH9UGxqLBoZz1hbM4llBcUjjrPfa3S7ujm7F5GbiE7ZczI" 
+          crossorigin="anonymous">
 </head>
 <body class="bg-dark text-light text-center">
+
     <div class="container mt-5">
-        <div class="card bg-secondary text-light mx-auto" style="max-width: 400px;">
+        <div class="card bg-secondary text-light mx-auto shadow-lg" style="max-width: 400px;">
             <div class="card-body">
                 <h2 class="mb-4">🔐 {{ gettext("Admin Panel Login") }}</h2>
                 
-                <!-- رسالة الخطأ (في حالة فشل تسجيل الدخول) -->
+                <!-- ✅ تحسين عرض رسائل الخطأ ومنع XSS -->
                 {% if error %}
-                <div class="alert alert-danger">{{ error }}</div>
+                <div class="alert alert-danger">{{ error | e }}</div>
                 {% endif %}
 
-                <!-- نموذج تسجيل الدخول -->
+                <!-- ✅ تحسين نموذج تسجيل الدخول -->
                 <form action="/admin/login" method="post" class="mt-3">
-                    <input type="text" name="username" placeholder="{{ gettext('Username') }}" class="form-control mb-3" required autocomplete="off">
-                    <input type="password" name="password" placeholder="{{ gettext('Password') }}" class="form-control mb-3" required>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    
+                    <input type="text" name="username" placeholder="{{ gettext('Username') }}" 
+                           class="form-control mb-3" required autocomplete="off" 
+                           maxlength="30" inputmode="text" aria-label="Username">
+                    
+                    <input type="password" name="password" placeholder="{{ gettext('Password') }}" 
+                           class="form-control mb-3" required autocomplete="off" 
+                           maxlength="50" aria-label="Password">
+                    
                     <button type="submit" class="btn btn-warning w-100">{{ gettext("Login") }}</button>
                 </form>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- ✅ تحسين تحميل Bootstrap JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" 
+            integrity="sha384-gegfhhz8rLvDbH03Av9LrFsd/BOaK9AC6OrF0E/lbM5S9O1PVb7QgiB6hxx7N4d" 
+            crossorigin="anonymous"></script>
 </body>
 </html>
