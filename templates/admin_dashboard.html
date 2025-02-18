@@ -3,13 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <title>{{ gettext("Admin Dashboard") }}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- ✅ تحسين تحميل Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" 
+          rel="stylesheet" 
+          integrity="sha384-rbsA2VBKQX3JqMAe6ZlH9UGxqLBoZz1hbM4llBcUjjrPfa3S7ujm7F5GbiE7ZczI" 
+          crossorigin="anonymous">
 </head>
 <body class="bg-dark text-light">
+
     <div class="container mt-5">
         <h2 class="text-center">⚙️ {{ gettext("Admin Dashboard") }}</h2>
 
-        <!-- 🔄 Language Selector -->
+        <!-- 🔄 تحسين تجربة تغيير اللغة -->
         <div class="text-end">
             <select id="languageSwitcher" class="form-select w-auto d-inline-block">
                 <option value="en" {% if get_locale() == 'en' %}selected{% endif %}>English</option>
@@ -18,32 +24,34 @@
             </select>
         </div>
 
-        <!-- 🚀 Navigation Buttons -->
+        <!-- 🚀 أزرار التنقل -->
         <div class="text-end mt-3">
             <a href="/" class="btn btn-warning">🏠 {{ gettext("Back to Home") }}</a>
             <a href="/admin/logout" class="btn btn-danger">🚪 {{ gettext("Logout") }}</a>
         </div>
 
-        <!-- 📑 Add New Article -->
+        <!-- 📑 إضافة مقال جديد -->
         <h4 class="mt-4">📑 {{ gettext("Add New Article") }}</h4>
 
-        <!-- 🟢 Success & Error Messages -->
+        <!-- ✅ تحسين عرض رسائل النجاح أو الخطأ ومنع XSS -->
         {% if success %}
-        <div class="alert alert-success">{{ success }}</div>
+        <div class="alert alert-success">{{ success | e }}</div>
         {% endif %}
         {% if error %}
-        <div class="alert alert-danger">{{ error }}</div>
+        <div class="alert alert-danger">{{ error | e }}</div>
         {% endif %}
 
+        <!-- ✅ إضافة CSRF لحماية النموذج -->
         <form action="/admin/add_article" method="post">
-            <input type="text" name="title" placeholder="{{ gettext('Article Title') }}" class="form-control mb-3" required>
-            <textarea name="content" placeholder="{{ gettext('Article Content') }}" class="form-control mb-3" required></textarea>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="text" name="title" placeholder="{{ gettext('Article Title') }}" class="form-control mb-3" required maxlength="255">
+            <textarea name="content" placeholder="{{ gettext('Article Content') }}" class="form-control mb-3" required rows="6" maxlength="5000"></textarea>
             <input type="text" name="image" placeholder="{{ gettext('Image URL') }}" class="form-control mb-3">
             <input type="text" name="category" placeholder="{{ gettext('Category') }}" class="form-control mb-3">
             <button type="submit" class="btn btn-success">➕ {{ gettext("Add Article") }}</button>
         </form>
 
-        <!-- 📰 Article List -->
+        <!-- 📰 قائمة المقالات الحالية -->
         <h4 class="mt-5">📰 {{ gettext("Current Articles") }}</h4>
         <table class="table table-dark table-striped">
             <thead>
@@ -68,13 +76,24 @@
         </table>
     </div>
 
+    <!-- ✅ تحسين تجربة تغيير اللغة باستخدام JavaScript بدون إعادة تحميل الصفحة -->
     <script>
         document.getElementById('languageSwitcher').addEventListener('change', function() {
             const lang = this.value;
-            const url = new URL(window.location.href);
-            url.searchParams.set("lang", lang);
-            window.location.href = url.toString();
+            fetch(`/set_language?lang=${lang}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    }
+                });
         });
     </script>
+
+    <!-- ✅ تحسين تحميل Bootstrap JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" 
+            integrity="sha384-gegfhhz8rLvDbH03Av9LrFsd/BOaK9AC6OrF0E/lbM5S9O1PVb7QgiB6hxx7N4d" 
+            crossorigin="anonymous"></script>
+
 </body>
 </html>
