@@ -51,3 +51,4 @@ class Article(db.Model):
     def get_short_content(self, max_length=200):
         """Shorten content while preventing word breaks."""
         if len(self.content) <= max_length:
+            return self.content
