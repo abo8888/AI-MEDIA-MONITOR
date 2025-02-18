@@ -1,6 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from langdetect import detect
 from datetime import datetime
+from app import db  
 
 db = SQLAlchemy()
 
