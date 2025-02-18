@@ -5,7 +5,7 @@ import os
 from dotenv import load_dotenv
 from datetime import datetime
 from flask_migrate import Migrate  # ✅ إضافة Flask-Migrate
-from article import Article  # ✅ استيراد النموذج
+from article import Article  # ✅ استيراد النموذج بعد تهيئة db
 
 # ✅ Load environment variables
 load_dotenv()
@@ -22,7 +22,8 @@ app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # ✅ Initialize SQLAlchemy
-db = SQLAlchemy(app)
+db = SQLAlchemy()  # ✅ تعريف `db` هنا بدون استيراده من `article.py`
+db.init_app(app)  # ✅ تهيئة `db` مع `app`
 migrate = Migrate(app, db)  # ✅ تهيئة Flask-Migrate
 
 # ✅ Supported languages configuration
