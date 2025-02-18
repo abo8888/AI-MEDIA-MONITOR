@@ -4,6 +4,9 @@ from flask_babel import Babel
 import os
 from dotenv import load_dotenv
 from datetime import datetime
+from flask import jsonify
+from article import Article
+
 
 # ✅ Load environment variables
 load_dotenv()
@@ -61,6 +64,12 @@ def home():
 
 # ✅ Configure debug mode based on environment variable
 app.config["DEBUG"] = os.getenv("DEBUG", "False").lower() == "true"
+@app.route("/api/articles", methods=["GET"])
+
+def get_articles():
+    """Fetch all articles from the database and return as JSON."""
+    articles = Article.query.all()
+    return jsonify([article.to_dict() for article in articles])
 
 # ✅ Run the Flask app
 if __name__ == "__main__":
