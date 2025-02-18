@@ -4,9 +4,8 @@ from flask_babel import Babel
 import os
 from dotenv import load_dotenv
 from datetime import datetime
-from flask import jsonify
-from article import Article
-
+from flask_migrate import Migrate  # ✅ إضافة Flask-Migrate
+from article import Article  # ✅ استيراد النموذج
 
 # ✅ Load environment variables
 load_dotenv()
@@ -24,6 +23,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # ✅ Initialize SQLAlchemy
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)  # ✅ تهيئة Flask-Migrate
 
 # ✅ Supported languages configuration
 app.config['BABEL_DEFAULT_LOCALE'] = 'en'
@@ -44,17 +44,6 @@ babel.init_app(app, locale_selector=get_locale)
 def inject_get_locale():
     return dict(get_locale=get_locale)
 
-# ✅ Article model with timestamps
-class Article(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(200), nullable=False)
-    content = db.Column(db.Text, nullable=False)
-    image = db.Column(db.String(500), nullable=True)
-    category = db.Column(db.String(50), nullable=False)
-    language = db.Column(db.String(10), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)
-
 # ✅ Home route that fetches articles based on selected language
 @app.route("/")
 def home():
@@ -62,14 +51,15 @@ def home():
     articles = Article.query.filter_by(language=lang).order_by(Article.id.desc()).all()
     return render_template("index.html", articles=articles, lang=lang)
 
-# ✅ Configure debug mode based on environment variable
-app.config["DEBUG"] = os.getenv("DEBUG", "False").lower() == "true"
+# ✅ API to get all articles
 @app.route("/api/articles", methods=["GET"])
-
 def get_articles():
     """Fetch all articles from the database and return as JSON."""
     articles = Article.query.all()
     return jsonify([article.to_dict() for article in articles])
+
+# ✅ Configure debug mode based on environment variable
+app.config["DEBUG"] = os.getenv("DEBUG", "False").lower() == "true"
 
 # ✅ Run the Flask app
 if __name__ == "__main__":
