@@ -1,7 +1,9 @@
 from flask_sqlalchemy import SQLAlchemy
 from langdetect import detect
 from datetime import datetime
-from app import db  # ✅ استخدام db من app.py بدون إعادة تعريفه
+from flask_sqlalchemy import SQLAlchemy
+
+db = SQLAlchemy()
 
 class Article(db.Model):
     """Article model for storing news articles."""
