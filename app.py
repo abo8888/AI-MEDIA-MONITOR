@@ -1,74 +1,80 @@
-from flask import Flask, render_template, request, jsonify, session
-from flask_sqlalchemy import SQLAlchemy
-from flask_babel import Babel
 import os
-from datetime import datetime
-from flask_migrate import Migrate
+import pandas as pd
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from flask_sqlalchemy import SQLAlchemy
+from langdetect import detect
 
-# Initialize Flask app
+# ✅ إعداد تطبيق Flask
 app = Flask(__name__)
-babel = Babel(app)
-
-# Security settings
 app.secret_key = "12345"
 
-# Database Configuration (Hardcoded URL)
-DATABASE_URL = "postgresql://ai_news_db_t2em_user:4dddE4EkwvJMycr2BVgAezLaOQVnxbKb@dpg-cumvu81u0jms73b97nc0-a:5432/ai_news_db_t2em"
+# ✅ تكوين قاعدة البيانات
+DATABASE_URL = os.environ.get(
+    "DATABASE_URL",
+    "postgresql://ai_news_db_t2em_user:4dddE4EkwvJMycr2BVgAezLaOQVnxbKb@dpg-cumvu81u0jms73b97nc0-a:5432/ai_news_db_t2em"
+)
 app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+db = SQLAlchemy(app)
 
-# Initialize SQLAlchemy (Before importing models)
-db = SQLAlchemy()
-migrate = Migrate()
+# ✅ نموذج المقال
+class Article(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(255), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    image = db.Column(db.String(255))
+    category = db.Column(db.String(100), nullable=False)
+    language = db.Column(db.String(10), nullable=False)
 
-# Register `db` with the Flask app
-db.init_app(app)
-migrate.init_app(app, db)
+# ✅ إنشاء الجداول
+with app.app_context():
+    db.create_all()
 
-# Now, import models AFTER initializing db
-with app.app_context():  # Ensure app context is active
-    from article import Article  
+# ✅ وظيفة لاكتشاف اللغة
+def detect_language(text):
+    try:
+        lang = detect(text)
+        return "ar" if lang == "ar" else "en"
+    except:
+        return "unknown"
 
-# Supported languages configuration
-app.config['BABEL_DEFAULT_LOCALE'] = 'en'
-app.config['BABEL_TRANSLATION_DIRECTORIES'] = 'translations'
-app.config['LANGUAGES'] = ['en', 'de', 'ar']
-
-# Function to determine the preferred language
-def get_locale():
-    if "lang" in request.args:
-        session["lang"] = request.args["lang"]
-    return session.get("lang", request.accept_languages.best_match(app.config["LANGUAGES"]))
-
-# Initialize Babel with the language selector
-babel.init_app(app, locale_selector=get_locale)
-
-# Make `get_locale` available in all templates
-@app.context_processor
-def inject_get_locale():
-    return dict(get_locale=get_locale)
-
-# Home route that fetches articles based on selected language
+# ✅ الصفحة الرئيسية
 @app.route("/")
 def home():
-    lang = get_locale()
-    with app.app_context():  # Ensure app context is active
-        articles = Article.query.filter_by(language=lang).order_by(Article.id.desc()).all()
-    return render_template("index.html", articles=articles, lang=lang)
+    lang = request.args.get("lang", "en")
+    news = Article.query.filter_by(category="news", language=lang).all()
+    return render_template("index.html", news=news, lang=lang)
 
-# API to get all articles
-@app.route("/api/articles", methods=["GET"])
-def get_articles():
-    """Fetch all articles from the database and return as JSON."""
-    with app.app_context():
-        articles = Article.query.all()
-    return jsonify([article.to_dict() for article in articles])
+# ✅ API نشر المقالات
+@app.route("/api/publish", methods=["POST"])
+def publish_article():
+    data = request.json
+    if not data or "title" not in data or "content" not in data or "image" not in data:
+        return jsonify({"error": "❌ البيانات غير مكتملة!"}), 400
 
-# Configure debug mode based on environment variable
-app.config["DEBUG"] = os.getenv("DEBUG", "False").lower() == "true"
+    new_article = Article(
+        title=data["title"],
+        content=data["content"],
+        image=data["image"],
+        category=data.get("category", "news"),
+        language=detect_language(data["content"])
+    )
 
-# Run the Flask app
+    db.session.add(new_article)
+    db.session.commit()
+
+    return jsonify({"message": f"✅ تم نشر المقال: {data['title']}"}), 201
+
+# ✅ API لاسترجاع المقالات
+@app.route("/api/get_articles/<category>/<lang>", methods=["GET"])
+def get_articles(category, lang):
+    articles = Article.query.filter_by(category=category, language=lang).all()
+    articles_list = [
+        {"title": a.title, "content": a.content, "image": a.image, "category": a.category, "language": a.language}
+        for a in articles
+    ]
+    return jsonify({"articles": articles_list})
+
+# ✅ تشغيل التطبيق
 if __name__ == "__main__":
-    with app.app_context():  # Ensure app context before running
-        db.create_all()  # Create tables if they don't exist
-    app.run(debug=app.config["DEBUG"])
+    app.run(debug=True, host="0.0.0.0", port=10000)
