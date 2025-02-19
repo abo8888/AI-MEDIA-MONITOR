@@ -1,9 +1,10 @@
 from flask_sqlalchemy import SQLAlchemy
-from langdetect import detect
+from langdetect import detect, DetectorFactory
 from datetime import datetime
-from flask_sqlalchemy import SQLAlchemy
+import textwrap
 
 db = SQLAlchemy()
+DetectorFactory.seed = 42  # لضمان تكرار نتائج الكشف عن اللغة
 
 class Article(db.Model):
     """Article model for storing news articles."""
@@ -14,21 +15,21 @@ class Article(db.Model):
     category = db.Column(db.String(50), nullable=False, default="news")  # Category
     language = db.Column(db.String(10), nullable=False, default="en")  # Language
     created_at = db.Column(db.DateTime, default=datetime.utcnow)  # Creation timestamp
-    updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)  # Last update timestamp
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)  # Last update timestamp
 
     def __init__(self, title, content, image=None, category="news"):
         """Initialize an article with automatic language detection."""
         self.title = title.strip()
         self.content = content.strip()
         self.image = image.strip() if image else None
-        self.category = category.strip()
-        self.language = self.detect_language(content)
+        self.category = category.strip().lower()  # جعل الفئة بصيغة موحدة
+        self.language = self.detect_language(f"{title} {content}")
 
     @staticmethod
     def detect_language(text):
         """Detect the language of the article using langdetect."""
         try:
-            if text and len(text) > 20:  # Ensure text is long enough for accurate detection
+            if text and len(text) > 20:  # تأكيد أن النص ليس قصيرًا جدًا
                 lang = detect(text)
                 return lang if lang in ["ar", "en", "de"] else "en"
             return "unknown"
@@ -53,3 +54,8 @@ class Article(db.Model):
         """Shorten content while preventing word breaks."""
         if len(self.content) <= max_length:
             return self.content
+        return textwrap.shorten(self.content, width=max_length, placeholder="...")
+
+    def __repr__(self):
+        """Return a string representation of the article."""
+        return f"<Article {self.id}: {self.title[:30]}... ({self.language})>"
