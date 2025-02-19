@@ -4,8 +4,7 @@ from flask_babel import Babel
 import os
 from dotenv import load_dotenv
 from datetime import datetime
-from flask_migrate import Migrate  # Adding Flask-Migrate
-from article import Article  # Importing the model after initializing db
+from flask_migrate import Migrate
 
 # Load environment variables
 load_dotenv()
@@ -21,10 +20,12 @@ app.secret_key = os.getenv("SECRET_KEY", "default_secret_key")
 app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-# Initialize SQLAlchemy
-db = SQLAlchemy()  # Define `db` here without importing from `article.py`
-db.init_app(app)  
-migrate = Migrate(app, db)  
+# Initialize SQLAlchemy (Before importing models)
+db = SQLAlchemy(app)  # Directly bind `db` to `app`
+migrate = Migrate(app, db)  # Enable database migrations
+
+# Now, import the model AFTER initializing `db`
+from article import Article
 
 # Supported languages configuration
 app.config['BABEL_DEFAULT_LOCALE'] = 'en'
