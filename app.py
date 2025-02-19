@@ -32,13 +32,16 @@ app.config['BABEL_DEFAULT_LOCALE'] = 'en'
 app.config['BABEL_TRANSLATION_DIRECTORIES'] = 'translations'
 app.config['LANGUAGES'] = ['en', 'de', 'ar']
 
-# Function to determine the preferred language
-def get_locale():
-    if "lang" in request.args:
-        session["lang"] = request.args["lang"]
-    return session.get("lang", request.accept_languages.best_match(app.config["LANGUAGES"]))
 
-@babel.localeselector
+
+# Define the locale selector function
+def get_locale():
+    # You can customize the logic here to determine the user's locale
+    return request.accept_languages.best_match(['en', 'es', 'de'])
+
+# Initialize Babel with the locale selector
+babel = Babel(app, locale_selector=get_locale)
+
 def babel_locale_selector():
     return get_locale()
 
