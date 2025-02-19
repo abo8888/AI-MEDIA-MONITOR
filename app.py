@@ -19,17 +19,14 @@ app.secret_key = "12345"
 app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://ai_news_db_t2em_user:4dddE4EkwvJMycr2BVgAezLaOQVnxbKb@dpg-cumvu81u0jms73b97nc0-a:5432/ai_news_db_t2em"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-# Initialize extensions **before** importing models
-db = SQLAlchemy()
-migrate = Migrate()
+# Initialize SQLAlchemy and Flask-Migrate with app directly
+db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
-db.init_app(app)
-migrate.init_app(app, db)
-
-# Now import models **AFTER** initializing db
+# Import models AFTER initializing db
 from article import Article  
 
-# Initialize Babel with the locale selector
+# Initialize Babel
 babel = Babel(app)
 
 # Supported languages
@@ -49,16 +46,14 @@ babel.init_app(app, locale_selector=get_locale)
 @app.route("/")
 def home():
     lang = get_locale()
-    with app.app_context():  # Ensure we are in an app context
-        articles = Article.query.filter_by(language=lang).order_by(Article.id.desc()).all()
+    articles = Article.query.filter_by(language=lang).order_by(Article.id.desc()).all()
     return render_template("index.html", articles=articles, lang=lang)
 
 # API to get all articles
 @app.route("/api/articles", methods=["GET"])
 def get_articles():
     """Fetch all articles from the database and return as JSON."""
-    with app.app_context():
-        articles = Article.query.all()
+    articles = Article.query.all()
     return jsonify([article.to_dict() for article in articles])
 
 # Configure debug mode based on environment variable
