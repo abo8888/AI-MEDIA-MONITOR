@@ -2,33 +2,32 @@ from flask import Flask, render_template, request, jsonify, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_babel import Babel
 import os
-from dotenv import load_dotenv
 from datetime import datetime
 from flask_migrate import Migrate
 
-# Load environment variables from .env
-load_dotenv()
-
 # Initialize Flask app
 app = Flask(__name__)
-babel = Babel(app)app.secret_key = "12345"
+babel = Babel(app)
 
-DATABASE_URL = os.environ.get(
-    "DATABASE_URL",
-    "postgresql://ai_news_db_t2em_user:4dddE4EkwvJMycr2BVgAezLaOQVnxbKb@dpg-cumvu81u0jms73b97nc0-a:5432/ai_news_db_t2em"
-) 
+# Security settings
+app.secret_key = "12345"
 
-# Database configuration
+# Database Configuration (Hardcoded URL)
+DATABASE_URL = "postgresql://ai_news_db_t2em_user:4dddE4EkwvJMycr2BVgAezLaOQVnxbKb@dpg-cumvu81u0jms73b97nc0-a:5432/ai_news_db_t2em"
 app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # Initialize SQLAlchemy (Before importing models)
 db = SQLAlchemy()
-db.init_app(app)
-migrate = Migrate(app, db)
+migrate = Migrate()
 
-# Import models AFTER initializing db
-from article import Article  
+# Register `db` with the Flask app
+db.init_app(app)
+migrate.init_app(app, db)
+
+# Now, import models AFTER initializing db
+with app.app_context():  # Ensure app context is active
+    from article import Article  
 
 # Supported languages configuration
 app.config['BABEL_DEFAULT_LOCALE'] = 'en'
@@ -53,7 +52,7 @@ def inject_get_locale():
 @app.route("/")
 def home():
     lang = get_locale()
-    with app.app_context():  # Ensure app context
+    with app.app_context():  # Ensure app context is active
         articles = Article.query.filter_by(language=lang).order_by(Article.id.desc()).all()
     return render_template("index.html", articles=articles, lang=lang)
 
