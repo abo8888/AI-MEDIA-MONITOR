@@ -2,6 +2,7 @@
 <html lang="{{ get_locale() }}">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ gettext("Admin Dashboard") }}</title>
     
     <!-- ✅ تحسين تحميل Bootstrap -->
@@ -18,9 +19,9 @@
         <!-- 🔄 تحسين تجربة تغيير اللغة -->
         <div class="text-end">
             <select id="languageSwitcher" class="form-select w-auto d-inline-block">
-                <option value="en" {% if get_locale() == 'en' %}selected{% endif %}>English</option>
-                <option value="de" {% if get_locale() == 'de' %}selected{% endif %}>Deutsch</option>
-                <option value="ar" {% if get_locale() == 'ar' %}selected{% endif %}>العربية</option>
+                <option value="en">English</option>
+                <option value="de">Deutsch</option>
+                <option value="ar">العربية</option>
             </select>
         </div>
 
@@ -44,10 +45,19 @@
         <!-- ✅ إضافة CSRF لحماية النموذج -->
         <form action="/admin/add_article" method="post">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input type="text" name="title" placeholder="{{ gettext('Article Title') }}" class="form-control mb-3" required maxlength="255">
-            <textarea name="content" placeholder="{{ gettext('Article Content') }}" class="form-control mb-3" required rows="6" maxlength="5000"></textarea>
-            <input type="text" name="image" placeholder="{{ gettext('Image URL') }}" class="form-control mb-3">
-            <input type="text" name="category" placeholder="{{ gettext('Category') }}" class="form-control mb-3">
+            
+            <input type="text" name="title" placeholder="{{ gettext('Article Title') }}" 
+                   class="form-control mb-3" required maxlength="255" pattern=".{3,255}">
+            
+            <textarea name="content" placeholder="{{ gettext('Article Content') }}" 
+                      class="form-control mb-3" required rows="6" maxlength="5000"></textarea>
+            
+            <input type="url" name="image" placeholder="{{ gettext('Image URL') }}" 
+                   class="form-control mb-3">
+            
+            <input type="text" name="category" placeholder="{{ gettext('Category') }}" 
+                   class="form-control mb-3" required pattern="[A-Za-z\s]+" title="Only letters and spaces allowed">
+            
             <button type="submit" class="btn btn-success">➕ {{ gettext("Add Article") }}</button>
         </form>
 
@@ -68,7 +78,14 @@
                     <td>{{ article.category }}</td>
                     <td>
                         <a href="/admin/edit_article/{{ article.id }}" class="btn btn-primary btn-sm">✏️ {{ gettext("Edit") }}</a>
-                        <a href="/admin/delete_article/{{ article.id }}" class="btn btn-danger btn-sm">🗑️ {{ gettext("Delete") }}</a>
+                        
+                        <!-- ✅ تأكيد عند الحذف -->
+                        <form action="/admin/delete_article" method="post" class="d-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="article_id" value="{{ article.id }}">
+                            <button type="submit" class="btn btn-danger btn-sm" 
+                                    onclick="return confirm('{{ gettext("Are you sure you want to delete this article?") }}')">🗑️ {{ gettext("Delete") }}</button>
+                        </form>
                     </td>
                 </tr>
                 {% endfor %}
@@ -76,17 +93,29 @@
         </table>
     </div>
 
-    <!-- ✅ تحسين تجربة تغيير اللغة باستخدام JavaScript بدون إعادة تحميل الصفحة -->
+    <!-- ✅ تحسين تجربة تغيير اللغة بدون إعادة تحميل الصفحة -->
     <script>
-        document.getElementById('languageSwitcher').addEventListener('change', function() {
-            const lang = this.value;
-            fetch(`/set_language?lang=${lang}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        location.reload();
-                    }
-                });
+        document.addEventListener("DOMContentLoaded", function () {
+            const languageSwitcher = document.getElementById("languageSwitcher");
+
+            // استعادة اللغة المختارة من localStorage
+            const savedLanguage = localStorage.getItem("selectedLanguage");
+            if (savedLanguage) {
+                languageSwitcher.value = savedLanguage;
+            }
+
+            languageSwitcher.addEventListener("change", function() {
+                const lang = this.value;
+                localStorage.setItem("selectedLanguage", lang);
+                
+                fetch(`/set_language?lang=${lang}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            location.reload();
+                        }
+                    });
+            });
         });
     </script>
 
