@@ -15,11 +15,11 @@ app = Flask(__name__)
 # Secret Key
 app.secret_key = "12345"
 
-# Database configuration
-app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://ai_news_db_t2em_user:4dddE4EkwvJMycr2BVgAezLaOQVnxbKb@dpg-cumvu81u0jms73b97nc0-a:5432/ai_news_db_t2em"
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+# Database Configuration
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL"="postgresql://ai_news_db_t2em_user:4dddE4EkwvJMycr2BVgAezLaOQVnxbKb@dpg-cumvu81u0jms73b97nc0-a.oregon-postgres.render.com/ai_news_db_t2em")
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Initialize SQLAlchemy and Flask-Migrate with app directly
+# Initialize Database
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
@@ -46,14 +46,16 @@ babel.init_app(app, locale_selector=get_locale)
 @app.route("/")
 def home():
     lang = get_locale()
-    articles = Article.query.filter_by(language=lang).order_by(Article.id.desc()).all()
+    with app.app_context():  # ✅ تأكد من وجود سياق التطبيق
+        articles = Article.query.filter_by(language=lang).order_by(Article.id.desc()).all()
     return render_template("index.html", articles=articles, lang=lang)
 
 # API to get all articles
 @app.route("/api/articles", methods=["GET"])
 def get_articles():
     """Fetch all articles from the database and return as JSON."""
-    articles = Article.query.all()
+    with app.app_context():  # ✅ تأكد من وجود سياق التطبيق
+        articles = Article.query.all()
     return jsonify([article.to_dict() for article in articles])
 
 # Configure debug mode based on environment variable
@@ -61,6 +63,4 @@ app.config["DEBUG"] = os.getenv("DEBUG", "False").lower() == "true"
 
 # Run the Flask app
 if __name__ == "__main__":
-    with app.app_context():  # Ensure we are running within the app context
-        db.create_all()  # Create tables if they don't exist
     app.run(debug=app.config["DEBUG"])
