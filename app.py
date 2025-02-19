@@ -7,7 +7,6 @@ from flask_migrate import Migrate
 
 # Initialize Flask app
 app = Flask(__name__)
-babel = Babel(app)
 
 # Security settings
 app.secret_key = "12345"
@@ -19,20 +18,13 @@ app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # Initialize SQLAlchemy
-db = SQLAlchemy()
+db = SQLAlchemy(app)  # Pass the app to SQLAlchemy
 migrate = Migrate(app, db)
-db.init_app(app)
-
-# Import models AFTER initializing db
-with app.app_context():
-    from article import Article  
 
 # Supported languages configuration
 app.config['BABEL_DEFAULT_LOCALE'] = 'en'
 app.config['BABEL_TRANSLATION_DIRECTORIES'] = 'translations'
 app.config['LANGUAGES'] = ['en', 'de', 'ar']
-
-
 
 # Define the locale selector function
 def get_locale():
@@ -42,13 +34,14 @@ def get_locale():
 # Initialize Babel with the locale selector
 babel = Babel(app, locale_selector=get_locale)
 
-def babel_locale_selector():
-    return get_locale()
-
 @app.context_processor
 def inject_get_locale():
     """Ensures `get_locale` is available in Jinja2 templates."""
     return dict(get_locale=get_locale)
+
+# Import models AFTER initializing db
+with app.app_context():
+    from article import Article  # Import the Article model
 
 # Home route
 @app.route("/")
