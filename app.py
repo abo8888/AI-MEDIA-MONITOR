@@ -24,6 +24,25 @@ from article import Article, Section, Page, Settings
 # ✅ إنشاء الجداول إذا لم تكن موجودة
 with app.app_context():
     db.create_all()
+from flask_babel import Babel
+
+# ✅ تهيئة Flask-Babel
+babel = Babel(app)
+
+# ✅ اللغات المدعومة
+app.config['BABEL_DEFAULT_LOCALE'] = 'en'
+app.config['BABEL_TRANSLATION_DIRECTORIES'] = 'translations'
+app.config['LANGUAGES'] = ['en', 'ar']
+
+# ✅ تحديد اللغة بناءً على جلسة المستخدم أو إعدادات المتصفح
+@babel.localeselector
+def get_locale():
+    return session.get("lang", request.accept_languages.best_match(app.config["LANGUAGES"]))
+
+# ✅ تمرير `get_locale` إلى جميع القوالب
+@app.context_processor
+def inject_locale():
+    return dict(get_locale=get_locale)
 
 @app.route("/")
 def home():
