@@ -25,6 +25,11 @@ from article import Article, Section, Page, Settings
 with app.app_context():
     db.create_all()
 
+@app.route("/")
+def home():
+    return render_template("index.html")
+
+
 # ✅ صفحة تسجيل الدخول للمشرف
 @app.route("/admin/login", methods=["GET", "POST"])
 def admin_login():
@@ -98,4 +103,5 @@ def add_page():
 
 # ✅ تشغيل التطبيق
 if __name__ == "__main__":
+    app.template_folder = "templates"
     app.run(debug=True)
