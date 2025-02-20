@@ -6,27 +6,28 @@ from flask_babel import Babel
 import os
 from dotenv import load_dotenv
 from datetime import datetime
+from sqlalchemy import text
 
-# ✅ Load environment variables
+#  Load environment variables
 load_dotenv()
 
-# ✅ Initialize Flask app
+#  Initialize Flask app
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "123456")
 
-# ✅ Database configuration
+#  Database configuration
 app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
     "DATABASE_URL",
     "postgresql://ai_news_db_user:4dddE4EkwvJMycr2BVgAezLaOQVnxbKb@dpg-cumvu81u0jms73b97nc0-a:5432/ai_news_db",
 )
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-# ✅ Initialize extensions
+#  Initialize extensions
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 migrate = Migrate(app, db)
 
-# ✅ Define Models
+#  Define Models
 class Article(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(255), nullable=False)
@@ -54,19 +55,20 @@ class Settings(db.Model):
     key = db.Column(db.String(255), unique=True, nullable=False)
     value = db.Column(db.Text, nullable=False)
 
-# ✅ Ensure tables exist and add missing `created_at` column if needed
+
 with app.app_context():
     db.create_all()
     
-    # ✅ Check if `created_at` column is missing and add it dynamically
+    #  Check if `created_at` column is missing and add it dynamically
     with db.engine.connect() as connection:
-        result = connection.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'article'")
+        result = connection.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name = 'article'"))
         columns = {row[0] for row in result}
         if "created_at" not in columns:
-            connection.execute("ALTER TABLE article ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;")
-            print("✅ Column `created_at` was missing and has been added.")
+            connection.execute(text("ALTER TABLE article ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;"))
+            print(" Column `created_at` was missing and has been added.")
 
-# ✅ Flask-Babel for Multi-language Support
+
+#  Flask-Babel for Multi-language Support
 babel = Babel(app)
 app.config["BABEL_DEFAULT_LOCALE"] = "en"
 app.config["BABEL_TRANSLATION_DIRECTORIES"] = "translations"
@@ -81,7 +83,7 @@ babel.init_app(app, locale_selector=get_locale)
 def inject_locale():
     return dict(get_locale=get_locale)
 
-# ✅ Routes
+#  Routes
 @app.route("/")
 def home():
     try:
@@ -91,7 +93,7 @@ def home():
         articles = Article.query.limit(10).all()  # ✅ Fetch articles without sorting by `created_at`
     return render_template("index.html", articles=articles)
 
-# ✅ Admin Login
+#  Admin Login
 @app.route("/admin/login", methods=["GET", "POST"])
 def admin_login():
     if request.method == "POST":
@@ -104,7 +106,7 @@ def admin_login():
             return "❌ Invalid login!", 403
     return render_template("admin_login.html")
 
-# ✅ Admin Dashboard
+#  Admin Dashboard
 @app.route("/admin")
 def admin_dashboard():
     if not session.get("admin"):
@@ -115,7 +117,7 @@ def admin_dashboard():
     pages = Page.query.all()
     return render_template("admin_dashboard.html", articles=articles, sections=sections, pages=pages)
 
-# ✅ API to Add Article
+#  API to Add Article
 @app.route("/admin/add_article", methods=["POST"])
 def add_article():
     if not session.get("admin"):
