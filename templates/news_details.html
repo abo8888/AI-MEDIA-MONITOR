@@ -5,15 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ article.title | e }}</title>
 
-    <!-- ✅ تحسين الـ SEO -->
+    <!-- ✅ SEO Optimization -->
     <meta name="description" content="{{ article.content[:150] | e }}...">
-    <meta name="keywords" content="أخبار, ذكاء اصطناعي, سياسة, اقتصاد, رياضة, تكنولوجيا, {{ article.category | e }}">
+    <meta name="keywords" content="News, AI, Politics, Economy, Sports, Technology, {{ article.category | e }}">
     <meta name="author" content="AI News Monitor">
     <meta property="og:title" content="{{ article.title | e }}">
     <meta property="og:description" content="{{ article.content[:200] | e }}...">
     <meta property="og:image" content="{{ article.image if article.image else 'https://via.placeholder.com/600' }}">
-    
-    <!-- ✅ تحسين تحميل Bootstrap -->
+
+    <!-- ✅ Secure Bootstrap Loading -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
           rel="stylesheet"
           integrity="sha384-rbsA2VBKQX3JqMAe6ZlH9UGxqLBoZz1hbM4llBcUjjrPfa3S7ujm7F5GbiE7ZczI"
@@ -21,17 +21,42 @@
 </head>
 <body class="bg-light">
 
+    <!-- ✅ Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">{{ gettext("AI News Monitor") }}</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="/#news">📰 {{ gettext("News") }}</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/#studies">📊 {{ gettext("Studies") }}</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/#media">🎥 {{ gettext("Media") }}</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/#about">ℹ️ {{ gettext("About Us") }}</a></li>
+                    <li class="nav-item"><a class="nav-link btn btn-warning text-dark" href="/admin">⚙️ {{ gettext("Admin Panel") }}</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ✅ Article Details -->
     <div class="container mt-5">
         <div class="card shadow-lg">
-            <!-- ✅ تحسين تحميل الصور -->
-            <img src="{{ article.image if article.image else 'https://via.placeholder.com/600' }}" class="card-img-top" alt="{{ article.title | e }}" loading="lazy">
+            <img src="{{ article.image if article.image else 'https://via.placeholder.com/600' }}" 
+                 class="card-img-top" 
+                 alt="{{ article.title | e }}" 
+                 loading="lazy">
             <div class="card-body">
                 <h1 class="card-title text-center">{{ article.title | e }}</h1>
-                <p class="text-muted text-center">{{ gettext("Category") }}: <strong>{{ article.category | e }}</strong></p>
+                <p class="text-muted text-center">
+                    {{ gettext("Category") }}: <strong>{{ article.category | e }}</strong> | 
+                    {{ gettext("Published on") }}: <strong>{{ article.created_at.strftime('%B %d, %Y') }}</strong>
+                </p>
                 <hr>
                 <p class="card-text">{{ article.content | e }}</p>
 
-                <!-- ✅ تحسين تجربة المستخدم بإضافة زر مشاركة -->
+                <!-- ✅ Social Sharing Buttons -->
                 <div class="text-center mt-4">
                     <a href="/" class="btn btn-primary">🔙 {{ gettext("Back to Home") }}</a>
                     <button onclick="shareArticle()" class="btn btn-info">📢 {{ gettext("Share") }}</button>
@@ -40,7 +65,7 @@
         </div>
     </div>
 
-    <!-- ✅ تحسين تجربة المستخدم عبر JavaScript -->
+    <!-- ✅ JavaScript for Sharing -->
     <script>
         function shareArticle() {
             if (navigator.share) {
@@ -50,12 +75,12 @@
                     url: window.location.href
                 }).catch(console.error);
             } else {
-                alert("Sharing not supported on this browser.");
+                alert("Sharing is not supported on this browser.");
             }
         }
     </script>
 
-    <!-- ✅ تحسين تحميل Bootstrap JavaScript -->
+    <!-- ✅ Bootstrap JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" 
             integrity="sha384-gegfhhz8rLvDbH03Av9LrFsd/BOaK9AC6OrF0E/lbM5S9O1PVb7QgiB6hxx7N4d" 
             crossorigin="anonymous"></script>
