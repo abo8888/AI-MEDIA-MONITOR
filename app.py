@@ -3,43 +3,58 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_migrate import Migrate
 from flask_babel import Babel
+from flask_wtf.csrf import CSRFProtect
 import os
 from dotenv import load_dotenv
 from datetime import datetime
 from sqlalchemy import text
-from flask_wtf.csrf import CSRFProtect
 
-
-#  Load environment variables
+# ✅ Load environment variables
 load_dotenv()
-# Initialize CSRF Protection
-csrf = CSRFProtect(app)
 
-#  Initialize Flask app
+# ✅ Initialize Flask app
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "123456")
 
-#  Database configuration
+# ✅ Initialize CSRF Protection AFTER defining `app`
+csrf = CSRFProtect(app)
+
+# ✅ Database Configuration
 app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
     "DATABASE_URL",
     "postgresql://ai_news_db_user:4dddE4EkwvJMycr2BVgAezLaOQVnxbKb@dpg-cumvu81u0jms73b97nc0-a:5432/ai_news_db",
 )
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-#  Initialize extensions
+# ✅ Initialize Extensions
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 migrate = Migrate(app, db)
 
-#  Define Models
+# ✅ Initialize Flask-Babel for Multi-language Support
+babel = Babel(app)
+app.config["BABEL_DEFAULT_LOCALE"] = "en"
+app.config["BABEL_TRANSLATION_DIRECTORIES"] = "translations"
+app.config["LANGUAGES"] = ["en", "ar"]
+
+def get_locale():
+    return session.get("lang", request.accept_languages.best_match(app.config["LANGUAGES"]))
+
+babel.init_app(app, locale_selector=get_locale)
+
+@app.context_processor
+def inject_locale():
+    return dict(get_locale=get_locale)
+
+# ✅ Define Models
 class Article(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(255), nullable=False)
     content = db.Column(db.Text, nullable=False)
     image = db.Column(db.String(255))
     category = db.Column(db.String(100))
-   # language = db.Column(db.String(10))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)  # ✅ Automatically set if missing
+    language = db.Column(db.String(10))  # ✅ Language column restored
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Section(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -59,59 +74,26 @@ class Settings(db.Model):
     key = db.Column(db.String(255), unique=True, nullable=False)
     value = db.Column(db.Text, nullable=False)
 
-
+# ✅ Ensure tables exist in the database
 with app.app_context():
     db.create_all()
-    
-    #  Check if `created_at` column is missing and add it dynamically
-    with db.engine.connect() as connection:
-        result = connection.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name = 'article'"))
-        columns = {row[0] for row in result}
-        if "created_at" not in columns:
-            connection.execute(text("ALTER TABLE article ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;"))
-            print(" Column `created_at` was missing and has been added.")
 
-
-#  Flask-Babel for Multi-language Support
-babel = Babel(app)
-app.config["BABEL_DEFAULT_LOCALE"] = "en"
-app.config["BABEL_TRANSLATION_DIRECTORIES"] = "translations"
-app.config["LANGUAGES"] = ["en", "ar"]
-
-def get_locale():
-    return session.get("lang", request.accept_languages.best_match(app.config["LANGUAGES"]))
-
-babel.init_app(app, locale_selector=get_locale)
-
-@app.context_processor
-def inject_locale():
-    return dict(get_locale=get_locale)
-
+# ✅ Home Route
 @app.route("/")
 def home():
     try:
-        db.session.rollback()  # التأكد من عدم وجود جلسات فاشلة
-        
-        with db.engine.connect() as connection:
-            result = connection.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name = 'article'"))
-            columns = {row[0] for row in result}
-
-        if "created_at" in columns:
-            print("✅ `created_at` موجود، سيتم ترتيب المقالات.")
-            articles = Article.query.order_by(Article.created_at.desc()).limit(10).all()
-        else:
-            print("⚠️ Warning: Column `created_at` is missing! Fetching articles without ordering.")
-            articles = Article.query.limit(10).all()
-
+        db.session.rollback()
+        articles = Article.query.order_by(Article.created_at.desc()).limit(10).all()
     except Exception as e:
         db.session.rollback()
         print(f"⚠️ Error fetching articles: {e}")
         articles = []
-
+    
     return render_template("index.html", articles=articles)
 
+# ✅ Admin Login
+hashed_password = bcrypt.generate_password_hash("1234").decode("utf-8")
 
-#  Admin Login
 @app.route("/admin/login", methods=["GET", "POST"])
 def admin_login():
     if request.method == "POST":
@@ -122,11 +104,11 @@ def admin_login():
             session["admin"] = True
             return redirect(url_for("admin_dashboard"))
         else:
-            return " Invalid login!", 403
+            return "Invalid login!", 403
 
     return render_template("admin_login.html")
 
-#  Admin Dashboard
+# ✅ Admin Dashboard
 @app.route("/admin")
 def admin_dashboard():
     if not session.get("admin"):
@@ -137,7 +119,7 @@ def admin_dashboard():
     pages = Page.query.all()
     return render_template("admin_dashboard.html", articles=articles, sections=sections, pages=pages)
 
-#  API to Add Article
+# ✅ API to Add Article
 @app.route("/admin/add_article", methods=["POST"])
 def add_article():
     if not session.get("admin"):
@@ -149,13 +131,13 @@ def add_article():
         content=data["content"],
         image=data["image"],
         category=data["category"],
-      #  language=data["language"],
+        language=data["language"],
     )
     db.session.add(new_article)
     db.session.commit()
-    return jsonify({"message": " Article added successfully!"}), 201
+    return jsonify({"message": "✅ Article added successfully!"}), 201
 
-#  API to Delete Article
+# ✅ API to Delete Article
 @app.route("/admin/delete_article/<int:id>", methods=["DELETE"])
 def delete_article(id):
     if not session.get("admin"):
@@ -180,7 +162,7 @@ def add_page():
     db.session.commit()
     return jsonify({"message": "✅ Page added!"}), 201
 
-# ✅ Set Language Route
+# ✅ Language Switching Route
 @app.route("/set_language")
 def set_language():
     lang = request.args.get("lang", "en")
