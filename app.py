@@ -50,7 +50,8 @@ def inject_locale():
 
 @app.route("/")
 def home():
-    return render_template("index.html")
+    articles = Article.query.order_by(Article.created_at.desc()).limit(10).all()
+    return render_template("index.html", articles=articles)
 
 # ✅ صفحة تسجيل الدخول للمشرف
 @app.route("/admin/login", methods=["GET", "POST"])
