@@ -1,128 +1,50 @@
 <!DOCTYPE html>
-<html lang="{{ get_locale() }}">
+<html lang="ar">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ gettext("Admin Dashboard") }}</title>
-    
-    <!-- ✅ تحسين تحميل Bootstrap -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" 
-          rel="stylesheet" 
-          integrity="sha384-rbsA2VBKQX3JqMAe6ZlH9UGxqLBoZz1hbM4llBcUjjrPfa3S7ujm7F5GbiE7ZczI" 
-          crossorigin="anonymous">
+    <title>لوحة تحكم المشرف</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="bg-dark text-light">
-
     <div class="container mt-5">
-        <h2 class="text-center">⚙️ {{ gettext("Admin Dashboard") }}</h2>
-
-        <!-- 🔄 تحسين تجربة تغيير اللغة -->
-        <div class="text-end">
-            <select id="languageSwitcher" class="form-select w-auto d-inline-block">
-                <option value="en">English</option>
-                <option value="de">Deutsch</option>
-                <option value="ar">العربية</option>
-            </select>
-        </div>
-
-        <!-- 🚀 أزرار التنقل -->
-        <div class="text-end mt-3">
-            <a href="/" class="btn btn-warning">🏠 {{ gettext("Back to Home") }}</a>
-            <a href="/admin/logout" class="btn btn-danger">🚪 {{ gettext("Logout") }}</a>
-        </div>
-
-        <!-- 📑 إضافة مقال جديد -->
-        <h4 class="mt-4">📑 {{ gettext("Add New Article") }}</h4>
-
-        <!-- ✅ تحسين عرض رسائل النجاح أو الخطأ ومنع XSS -->
-        {% if success %}
-        <div class="alert alert-success">{{ success | e }}</div>
-        {% endif %}
-        {% if error %}
-        <div class="alert alert-danger">{{ error | e }}</div>
-        {% endif %}
-
-        <!-- ✅ إضافة CSRF لحماية النموذج -->
-        <form action="/admin/add_article" method="post">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            
-            <input type="text" name="title" placeholder="{{ gettext('Article Title') }}" 
-                   class="form-control mb-3" required maxlength="255" pattern=".{3,255}">
-            
-            <textarea name="content" placeholder="{{ gettext('Article Content') }}" 
-                      class="form-control mb-3" required rows="6" maxlength="5000"></textarea>
-            
-            <input type="url" name="image" placeholder="{{ gettext('Image URL') }}" 
-                   class="form-control mb-3">
-            
-            <input type="text" name="category" placeholder="{{ gettext('Category') }}" 
-                   class="form-control mb-3" required pattern="[A-Za-z\s]+" title="Only letters and spaces allowed">
-            
-            <button type="submit" class="btn btn-success">➕ {{ gettext("Add Article") }}</button>
-        </form>
-
-        <!-- 📰 قائمة المقالات الحالية -->
-        <h4 class="mt-5">📰 {{ gettext("Current Articles") }}</h4>
-        <table class="table table-dark table-striped">
-            <thead>
-                <tr>
-                    <th>{{ gettext("Title") }}</th>
-                    <th>{{ gettext("Category") }}</th>
-                    <th>{{ gettext("Actions") }}</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for article in articles %}
-                <tr>
-                    <td>{{ article.title }}</td>
-                    <td>{{ article.category }}</td>
-                    <td>
-                        <a href="/admin/edit_article/{{ article.id }}" class="btn btn-primary btn-sm">✏️ {{ gettext("Edit") }}</a>
-                        
-                        <!-- ✅ تأكيد عند الحذف -->
-                        <form action="/admin/delete_article" method="post" class="d-inline">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <input type="hidden" name="article_id" value="{{ article.id }}">
-                            <button type="submit" class="btn btn-danger btn-sm" 
-                                    onclick="return confirm('{{ gettext("Are you sure you want to delete this article?") }}')">🗑️ {{ gettext("Delete") }}</button>
-                        </form>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
+        <h1 class="text-center">⚙️ لوحة التحكم</h1>
+        <hr>
+        <h3>📌 إدارة المقالات</h3>
+        <table class="table table-dark table-bordered">
+            <tr>
+                <th>العنوان</th>
+                <th>التصنيف</th>
+                <th>الإجراءات</th>
+            </tr>
+            {% for article in articles %}
+            <tr>
+                <td>{{ article.title }}</td>
+                <td>{{ article.category }}</td>
+                <td>
+                    <button onclick="deleteArticle({{ article.id }})" class="btn btn-danger">🗑️ حذف</button>
+                </td>
+            </tr>
+            {% endfor %}
         </table>
+
+        <h3>📌 إدارة الصفحات</h3>
+        <form action="/admin/add_page" method="POST">
+            <input type="text" name="title" placeholder="عنوان الصفحة" class="form-control" required>
+            <textarea name="content" class="form-control mt-2" placeholder="محتوى الصفحة" required></textarea>
+            <input type="text" name="slug" placeholder="رابط الصفحة (slug)" class="form-control mt-2" required>
+            <button type="submit" class="btn btn-primary mt-2">➕ إضافة صفحة</button>
+        </form>
     </div>
 
-    <!-- ✅ تحسين تجربة تغيير اللغة بدون إعادة تحميل الصفحة -->
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const languageSwitcher = document.getElementById("languageSwitcher");
-
-            // استعادة اللغة المختارة من localStorage
-            const savedLanguage = localStorage.getItem("selectedLanguage");
-            if (savedLanguage) {
-                languageSwitcher.value = savedLanguage;
-            }
-
-            languageSwitcher.addEventListener("change", function() {
-                const lang = this.value;
-                localStorage.setItem("selectedLanguage", lang);
-                
-                fetch(`/set_language?lang=${lang}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            location.reload();
-                        }
-                    });
-            });
-        });
+        function deleteArticle(articleId) {
+            fetch(`/admin/delete_article/${articleId}`, { method: "DELETE" })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    location.reload();
+                });
+        }
     </script>
-
-    <!-- ✅ تحسين تحميل Bootstrap JavaScript -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" 
-            integrity="sha384-gegfhhz8rLvDbH03Av9LrFsd/BOaK9AC6OrF0E/lbM5S9O1PVb7QgiB6hxx7N4d" 
-            crossorigin="anonymous"></script>
-
 </body>
 </html>
