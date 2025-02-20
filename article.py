@@ -1,7 +1,9 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+from app import db
+db.init_app(app)  # ✅ تأكد من استدعاء هذا داخل `app.py`
 
-db = SQLAlchemy()
+
 
 class Article(db.Model):
     id = db.Column(db.Integer, primary_key=True)
