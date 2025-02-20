@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
+from flask_migrate import Migrate
+from flask_babel import Babel
 import os
 from dotenv import load_dotenv
 from datetime import datetime
@@ -22,6 +24,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 # ✅ Initialize extensions
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
+migrate = Migrate(app, db)
 
 # ✅ Define Models
 class Article(db.Model):
@@ -31,7 +34,7 @@ class Article(db.Model):
     image = db.Column(db.String(255))
     category = db.Column(db.String(100))
     language = db.Column(db.String(10))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)  # ✅ Automatically set if missing
 
 class Section(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -51,13 +54,19 @@ class Settings(db.Model):
     key = db.Column(db.String(255), unique=True, nullable=False)
     value = db.Column(db.Text, nullable=False)
 
-# ✅ Create tables if they don't exist
+# ✅ Ensure tables exist and add missing `created_at` column if needed
 with app.app_context():
     db.create_all()
+    
+    # ✅ Check if `created_at` column is missing and add it dynamically
+    with db.engine.connect() as connection:
+        result = connection.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'article'")
+        columns = {row[0] for row in result}
+        if "created_at" not in columns:
+            connection.execute("ALTER TABLE article ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;")
+            print("✅ Column `created_at` was missing and has been added.")
 
 # ✅ Flask-Babel for Multi-language Support
-from flask_babel import Babel
-
 babel = Babel(app)
 app.config["BABEL_DEFAULT_LOCALE"] = "en"
 app.config["BABEL_TRANSLATION_DIRECTORIES"] = "translations"
@@ -75,7 +84,11 @@ def inject_locale():
 # ✅ Routes
 @app.route("/")
 def home():
-    articles = Article.query.order_by(Article.created_at.desc()).limit(10).all()
+    try:
+        articles = Article.query.order_by(Article.created_at.desc()).limit(10).all()
+    except Exception as e:
+        print(f"⚠️ Warning: {e}")  # ✅ Log the error
+        articles = Article.query.limit(10).all()  # ✅ Fetch articles without sorting by `created_at`
     return render_template("index.html", articles=articles)
 
 # ✅ Admin Login
@@ -88,7 +101,7 @@ def admin_login():
             session["admin"] = True
             return redirect(url_for("admin_dashboard"))
         else:
-            return "❌ خطأ في تسجيل الدخول!", 403
+            return "❌ Invalid login!", 403
     return render_template("admin_login.html")
 
 # ✅ Admin Dashboard
@@ -106,7 +119,7 @@ def admin_dashboard():
 @app.route("/admin/add_article", methods=["POST"])
 def add_article():
     if not session.get("admin"):
-        return jsonify({"error": "غير مصرح لك!"}), 403
+        return jsonify({"error": "Unauthorized!"}), 403
 
     data = request.json
     new_article = Article(
@@ -118,32 +131,32 @@ def add_article():
     )
     db.session.add(new_article)
     db.session.commit()
-    return jsonify({"message": "✅ تمت إضافة المقالة بنجاح!"}), 201
+    return jsonify({"message": "✅ Article added successfully!"}), 201
 
 # ✅ API to Delete Article
 @app.route("/admin/delete_article/<int:id>", methods=["DELETE"])
 def delete_article(id):
     if not session.get("admin"):
-        return jsonify({"error": "غير مصرح لك!"}), 403
+        return jsonify({"error": "Unauthorized!"}), 403
 
     article = Article.query.get(id)
     if article:
         db.session.delete(article)
         db.session.commit()
-        return jsonify({"message": "🗑️ تم حذف المقالة!"})
-    return jsonify({"error": "❌ المقالة غير موجودة!"}), 404
+        return jsonify({"message": "🗑️ Article deleted!"})
+    return jsonify({"error": "❌ Article not found!"}), 404
 
 # ✅ API to Add Page
 @app.route("/admin/add_page", methods=["POST"])
 def add_page():
     if not session.get("admin"):
-        return jsonify({"error": "غير مصرح لك!"}), 403
+        return jsonify({"error": "Unauthorized!"}), 403
 
     data = request.json
     new_page = Page(title=data["title"], content=data["content"], slug=data["slug"])
     db.session.add(new_page)
     db.session.commit()
-    return jsonify({"message": "✅ تمت إضافة الصفحة!"}), 201
+    return jsonify({"message": "✅ Page added!"}), 201
 
 # ✅ Set Language Route
 @app.route("/set_language")
