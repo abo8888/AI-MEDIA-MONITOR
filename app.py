@@ -1,73 +1,101 @@
-from flask import Flask, render_template, request, jsonify, session
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from flask_babel import Babel
+from flask_bcrypt import Bcrypt
 import os
 from dotenv import load_dotenv
 from datetime import datetime
-from flask_migrate import Migrate
 
-# Load environment variables
+# ✅ تحميل المتغيرات البيئية
 load_dotenv()
 
-# Initialize database and migration
-db = SQLAlchemy()
-migrate = Migrate()
+# ✅ إعداد Flask
+app = Flask(__name__)
+app.secret_key = os.getenv("SECRET_KEY", "123456")
 
-def create_app():
-    app = Flask(__name__)
+# ✅ تكوين قاعدة البيانات
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", "postgresql://ai_news_db_user:4dddE4EkwvJMycr2BVgAezLaOQVnxbKb@dpg-cumvu81u0jms73b97nc0-a:5432/database")
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+db = SQLAlchemy(app)
+bcrypt = Bcrypt(app)
 
-    # Secret Key (should be stored securely)
-    app.secret_key = os.getenv("SECRET_KEY", "123456")
+# ✅ استيراد النماذج
+from article import Article, Section, Page, Settings
 
-    # Database Configuration
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL", "postgresql://ai_news_db_t2em_user:4dddE4EkwvJMycr2BVgAezLaOQVnxbKb@dpg-cumvu81u0jms73b97nc0-a.oregon-postgres.render.com/ai_news_db_t2em")
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# ✅ إنشاء الجداول إذا لم تكن موجودة
+with app.app_context():
+    db.create_all()
 
-    # Initialize database and migration
-    db.init_app(app)
-    migrate.init_app(app, db)
+# ✅ صفحة تسجيل الدخول للمشرف
+@app.route("/admin/login", methods=["GET", "POST"])
+def admin_login():
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+        if username == "abo" and password == "1234":
+            session["admin"] = True
+            return redirect(url_for("admin_dashboard"))
+        else:
+            return "❌ خطأ في تسجيل الدخول!", 403
+    return render_template("admin_login.html")
 
-    # Import models after initializing db
-    from article import Article
+# ✅ لوحة التحكم
+@app.route("/admin")
+def admin_dashboard():
+    if not session.get("admin"):
+        return redirect(url_for("admin_login"))
+    
+    articles = Article.query.all()
+    sections = Section.query.all()
+    pages = Page.query.all()
+    return render_template("admin_dashboard.html", articles=articles, sections=sections, pages=pages)
 
-    # Initialize Babel
-    babel = Babel(app)
+# ✅ API لإضافة مقالة جديدة
+@app.route("/admin/add_article", methods=["POST"])
+def add_article():
+    if not session.get("admin"):
+        return jsonify({"error": "غير مصرح لك!"}), 403
+    
+    data = request.json
+    new_article = Article(
+        title=data["title"],
+        content=data["content"],
+        image=data["image"],
+        category=data["category"],
+        language=data["language"]
+    )
+    db.session.add(new_article)
+    db.session.commit()
+    return jsonify({"message": "✅ تمت إضافة المقالة بنجاح!"}), 201
 
-    # Supported languages
-    app.config['BABEL_DEFAULT_LOCALE'] = 'en'
-    app.config['BABEL_TRANSLATION_DIRECTORIES'] = 'translations'
-    app.config['LANGUAGES'] = ['en', 'de', 'ar']
+# ✅ API لحذف المقالات
+@app.route("/admin/delete_article/<int:id>", methods=["DELETE"])
+def delete_article(id):
+    if not session.get("admin"):
+        return jsonify({"error": "غير مصرح لك!"}), 403
+    
+    article = Article.query.get(id)
+    if article:
+        db.session.delete(article)
+        db.session.commit()
+        return jsonify({"message": "🗑️ تم حذف المقالة!"})
+    return jsonify({"error": "❌ المقالة غير موجودة!"}), 404
 
-    # Function to determine the preferred language
-    def get_locale():
-        if "lang" in request.args:
-            session["lang"] = request.args["lang"]
-        return session.get("lang", request.accept_languages.best_match(app.config["LANGUAGES"]))
+# ✅ API لإضافة صفحة جديدة
+@app.route("/admin/add_page", methods=["POST"])
+def add_page():
+    if not session.get("admin"):
+        return jsonify({"error": "غير مصرح لك!"}), 403
 
-    babel.init_app(app, locale_selector=get_locale)
+    data = request.json
+    new_page = Page(
+        title=data["title"],
+        content=data["content"],
+        slug=data["slug"]
+    )
+    db.session.add(new_page)
+    db.session.commit()
+    return jsonify({"message": "✅ تمت إضافة الصفحة!"}), 201
 
-    # Home route that fetches articles based on selected language
-    @app.route("/")
-    def home():
-        lang = get_locale()
-        try:
-            articles = Article.query.filter_by(language=lang).order_by(Article.id.desc()).all()
-            return render_template("index.html", articles=articles, lang=lang)
-        except Exception as e:
-            return str(e), 500
-
-    # API to get all articles
-    @app.route("/api/articles", methods=["GET"])
-    def get_articles():
-        """Fetch all articles from the database and return as JSON."""
-        try:
-            articles = Article.query.all()
-            return jsonify([article.to_dict() for article in articles])
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
-
-    # Configure debug mode based on environment variable
-    app.config["DEBUG"] = os.getenv("DEBUG", "False").lower() == "true"
-
-    return app
-
+# ✅ تشغيل التطبيق
+if __name__ == "__main__":
+    app.run(debug=True)
