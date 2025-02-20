@@ -1,7 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from app import db
-db.init_app(app)  # ✅ تأكد من استدعاء هذا داخل `app.py`
 
 
 
