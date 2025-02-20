@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
+from flask_babel import Babel
 import os
 from dotenv import load_dotenv
 from datetime import datetime
@@ -13,7 +14,7 @@ app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "123456")
 
 # ✅ تكوين قاعدة البيانات
-app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", "postgresql://ai_news_db_user:4dddE4EkwvJMycr2BVgAezLaOQVnxbKb@dpg-cumvu81u0jms73b97nc0-a:5432/database")
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", "postgresql://ai_news_db_user:4dddE4EkwvJMycr2BVgAezLaOQVnxbKb@dpg-cumvu81u0jms73b97nc0-a:5432/ai_news_db")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
@@ -24,7 +25,6 @@ from article import Article, Section, Page, Settings
 # ✅ إنشاء الجداول إذا لم تكن موجودة
 with app.app_context():
     db.create_all()
-from flask_babel import Babel
 
 # ✅ تهيئة Flask-Babel
 babel = Babel(app)
@@ -47,7 +47,6 @@ def inject_locale():
 @app.route("/")
 def home():
     return render_template("index.html")
-
 
 # ✅ صفحة تسجيل الدخول للمشرف
 @app.route("/admin/login", methods=["GET", "POST"])
@@ -122,5 +121,4 @@ def add_page():
 
 # ✅ تشغيل التطبيق
 if __name__ == "__main__":
-    app.template_folder = "templates"
-    app.run(debug=True)
+    app.run(debug=True, host="0.0.0.0", port=10000)
