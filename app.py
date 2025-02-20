@@ -83,14 +83,13 @@ babel.init_app(app, locale_selector=get_locale)
 def inject_locale():
     return dict(get_locale=get_locale)
 
-#  Routes
 @app.route("/")
 def home():
     try:
         articles = Article.query.order_by(Article.created_at.desc()).limit(10).all()
     except Exception as e:
-        print(f"⚠️ Warning: {e}")  # ✅ Log the error
-        articles = Article.query.limit(10).all()  # ✅ Fetch articles without sorting by `created_at`
+        print(f"⚠️ Warning: {e}")  # Log the error
+        articles = Article.query.limit(10).all()  
     return render_template("index.html", articles=articles)
 
 #  Admin Login
@@ -103,7 +102,7 @@ def admin_login():
             session["admin"] = True
             return redirect(url_for("admin_dashboard"))
         else:
-            return "❌ Invalid login!", 403
+            return " Invalid login!", 403
     return render_template("admin_login.html")
 
 #  Admin Dashboard
@@ -133,9 +132,9 @@ def add_article():
     )
     db.session.add(new_article)
     db.session.commit()
-    return jsonify({"message": "✅ Article added successfully!"}), 201
+    return jsonify({"message": " Article added successfully!"}), 201
 
-# ✅ API to Delete Article
+#  API to Delete Article
 @app.route("/admin/delete_article/<int:id>", methods=["DELETE"])
 def delete_article(id):
     if not session.get("admin"):
