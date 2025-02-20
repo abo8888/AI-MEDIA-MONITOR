@@ -1,7 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
-from flask_babel import Babel
 import os
 from dotenv import load_dotenv
 from datetime import datetime
@@ -26,8 +25,11 @@ from article import Article, Section, Page, Settings
 with app.app_context():
     db.create_all()
 
+# ✅ استيراد Flask-Babel بعد تثبيته
+from flask_babel import Babel
+
 # ✅ تهيئة Flask-Babel
-babel = Babel(app)
+babel = Babel()
 
 # ✅ اللغات المدعومة
 app.config['BABEL_DEFAULT_LOCALE'] = 'en'
@@ -35,9 +37,11 @@ app.config['BABEL_TRANSLATION_DIRECTORIES'] = 'translations'
 app.config['LANGUAGES'] = ['en', 'ar']
 
 # ✅ تحديد اللغة بناءً على جلسة المستخدم أو إعدادات المتصفح
-@babel.localeselector
 def get_locale():
     return session.get("lang", request.accept_languages.best_match(app.config["LANGUAGES"]))
+
+# ✅ تهيئة Babel بعد إعداد التطبيق
+babel.init_app(app, locale_selector=get_locale)
 
 # ✅ تمرير `get_locale` إلى جميع القوالب
 @app.context_processor
