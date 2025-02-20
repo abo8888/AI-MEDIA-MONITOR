@@ -3,44 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ gettext("AI Media Monitor") }}</title>
+    <title>AI News</title>
 
     <!-- ✅ SEO Optimization -->
-    <meta name="description" content="AI News Monitor - A platform specializing in AI-driven news analysis">
+    <meta name="description" content="AI-powered News Platform">
     <meta name="keywords" content="News, AI, Politics, Economy, Sports, Technology">
+    <meta property="og:title" content="AI News">
 
-    <!-- ✅ Secure Bootstrap Loading -->
+    <!-- ✅ Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
           rel="stylesheet"
           integrity="sha384-rbsA2VBKQX3JqMAe6ZlH9UGxqLBoZz1hbM4llBcUjjrPfa3S7ujm7F5GbiE7ZczI"
           crossorigin="anonymous">
 
     <style>
-        body {
-            background-color: #121212;
-            color: #f8f9fa;
-            font-family: 'Arial', sans-serif;
-        }
-        .navbar {
-            background: #212529;
-        }
-        .navbar a:hover {
-            color: #ffc107;
-        }
-        .hero {
-            background: url('https://via.placeholder.com/1200x400') no-repeat center;
-            background-size: cover;
-            padding: 100px 0;
-            text-align: center;
-            color: white;
-        }
-        .footer {
-            background: #212529;
-            color: white;
-            text-align: center;
-            padding: 20px;
-            margin-top: 30px;
-        }
+        body { background-color: #f8f9fa; }
+        .navbar { background-color: #343a40; }
+        .navbar-brand, .nav-link { color: white !important; }
+        .news-card img { height: 200px; object-fit: cover; }
+        .news-card .card-body { min-height: 250px; }
     </style>
 </head>
 <body>
@@ -48,68 +29,61 @@
     <!-- ✅ Navigation Bar -->
     <nav class="navbar navbar-expand-lg">
         <div class="container">
-            <a class="navbar-brand" href="#">{{ gettext("AI News Monitor") }}</a>
+            <a class="navbar-brand" href="/">AI News</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="#news">📰 {{ gettext("News") }}</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#studies">📊 {{ gettext("Studies") }}</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#media">🎥 {{ gettext("Media") }}</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#about">ℹ️ {{ gettext("About Us") }}</a></li>
-                    <li class="nav-item"><a class="nav-link btn btn-warning text-dark" href="/admin">⚙️ {{ gettext("Admin Panel") }}</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/">📰 Home</a></li>
+                    <li class="nav-item">
+                        <select id="languageSwitcher" class="form-select w-auto">
+                            <option value="en" {% if get_locale() == 'en' %}selected{% endif %}>English</option>
+                            <option value="ar" {% if get_locale() == 'ar' %}selected{% endif %}>العربية</option>
+                        </select>
+                    </li>
                 </ul>
             </div>
         </div>
     </nav>
 
-    <!-- ✅ Hero Section -->
-    <div class="hero">
-        <h1>{{ gettext("AI News Monitor") }}</h1>
-        <p>{{ gettext("Deep AI-driven news and media analysis") }}</p>
-    </div>
-
-    <!-- ✅ News Section -->
-    <section id="news" class="container mt-5">
-        <h2 class="section-title">📰 {{ gettext("Latest News") }}</h2>
+    <!-- ✅ Article List -->
+    <div class="container mt-5">
+        <h2 class="text-center">📰 Latest Articles</h2>
         <div class="row">
             {% for article in articles %}
-            <div class="col-md-4">
-                <div class="card bg-dark text-white">
-                    <img src="{{ article.image }}" class="card-img-top" alt="{{ article.title | e }}" loading="lazy">
+            <div class="col-md-4 mb-4">
+                <div class="card news-card shadow-sm">
+                    <img src="{{ article.image_url }}" class="card-img-top" alt="News Image" loading="lazy">
                     <div class="card-body">
-                        <h5 class="card-title">{{ article.title | e }}</h5>
-                        <p class="card-text">{{ article.content[:100] | e }}...</p>
-                        <a href="/article/{{ article.id }}" class="btn btn-warning">{{ gettext("Read More") }}</a>
+                        <h5 class="card-title">{{ article.title }}</h5>
+                        <p class="text-muted">
+                            <small>
+                                📌 {{ article.source }} | ✍️ {{ article.author or "Unknown" }} | 🕒 {{ article.publishedAt[:10] }}
+                            </small>
+                        </p>
+                        <p class="card-text">{{ article.description[:120] }}...</p>
+                        <a href="{{ article.url }}" class="btn btn-primary" target="_blank">🔗 Read More</a>
                     </div>
                 </div>
             </div>
             {% else %}
-            <p class="text-center">{{ gettext("No articles available.") }}</p>
+            <p class="text-center">No articles available.</p>
             {% endfor %}
         </div>
-    </section>
-
-    <!-- ✅ Language Selector -->
-    <div class="container text-center mt-4">
-        <label for="languageSwitcher" class="form-label">{{ gettext("Select Language") }}</label>
-        <select id="languageSwitcher" class="form-select w-auto mx-auto">
-            <option value="en" {% if get_locale() == 'en' %}selected{% endif %}>English</option>
-            <option value="de" {% if get_locale() == 'de' %}selected{% endif %}>Deutsch</option>
-            <option value="ar" {% if get_locale() == 'ar' %}selected{% endif %}>العربية</option>
-        </select>
     </div>
 
+    <!-- ✅ Language Switcher Script -->
     <script>
         document.getElementById('languageSwitcher').addEventListener('change', function() {
-            fetch(`/set_language?lang=${this.value}`).then(() => location.reload());
+            window.location.href = `/set_language?lang=${this.value}`;
         });
     </script>
 
-    <footer class="footer">
-        <p>&copy; 2025 {{ gettext("AI News Monitor | All Rights Reserved") }}</p>
-    </footer>
+    <!-- ✅ Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-gegfhhz8rLvDbH03Av9LrFsd/BOaK9AC6OrF0E/lbM5S9O1PVb7QgiB6hxx7N4d"
+            crossorigin="anonymous"></script>
 
 </body>
 </html>
