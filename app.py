@@ -15,7 +15,7 @@ app.secret_key = os.getenv("SECRET_KEY", "123456")
 # ✅ تكوين قاعدة البيانات
 app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", "postgresql://ai_news_db_user:4dddE4EkwvJMycr2BVgAezLaOQVnxbKb@dpg-cumvu81u0jms73b97nc0-a:5432/ai_news_db")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-db = SQLAlchemy(app)
+#db = SQLAlchemy(app)
 db.init_app(app)
 
 bcrypt = Bcrypt(app)
