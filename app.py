@@ -34,7 +34,7 @@ class Article(db.Model):
     content = db.Column(db.Text, nullable=False)
     image = db.Column(db.String(255))
     category = db.Column(db.String(100))
-    language = db.Column(db.String(10))
+   # language = db.Column(db.String(10))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)  # ✅ Automatically set if missing
 
 class Section(db.Model):
@@ -143,7 +143,7 @@ def add_article():
         content=data["content"],
         image=data["image"],
         category=data["category"],
-        language=data["language"],
+      #  language=data["language"],
     )
     db.session.add(new_article)
     db.session.commit()
