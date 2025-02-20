@@ -7,9 +7,13 @@ import os
 from dotenv import load_dotenv
 from datetime import datetime
 from sqlalchemy import text
+from flask_wtf.csrf import CSRFProtect
+
 
 #  Load environment variables
 load_dotenv()
+# Initialize CSRF Protection
+csrf = CSRFProtect(app)
 
 #  Initialize Flask app
 app = Flask(__name__)
@@ -113,11 +117,13 @@ def admin_login():
     if request.method == "POST":
         username = request.form["username"]
         password = request.form["password"]
-        if username == "abo" and password == "1234":
+
+        if username == "abo" and bcrypt.check_password_hash(hashed_password, password):
             session["admin"] = True
             return redirect(url_for("admin_dashboard"))
         else:
             return " Invalid login!", 403
+
     return render_template("admin_login.html")
 
 #  Admin Dashboard
