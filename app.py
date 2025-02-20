@@ -86,21 +86,24 @@ def inject_locale():
 @app.route("/")
 def home():
     try:
-        # التحقق مما إذا كان العمود موجودًا قبل استخدامه في الترتيب
+        db.session.rollback()  # التأكد من عدم وجود جلسات فاشلة
+        
         with db.engine.connect() as connection:
             result = connection.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name = 'article'"))
             columns = {row[0] for row in result}
-        
+
         if "created_at" in columns:
+            print("✅ `created_at` موجود، سيتم ترتيب المقالات.")
             articles = Article.query.order_by(Article.created_at.desc()).limit(10).all()
         else:
             print("⚠️ Warning: Column `created_at` is missing! Fetching articles without ordering.")
             articles = Article.query.limit(10).all()
-            
+
     except Exception as e:
+        db.session.rollback()
         print(f"⚠️ Error fetching articles: {e}")
         articles = []
-    
+
     return render_template("index.html", articles=articles)
 
 
